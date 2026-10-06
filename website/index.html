@@ -1008,24 +1008,12 @@ systemctl status airmock</pre></div>
   <p class="eyebrow">What's new</p>
   <h2 style="margin-top:14px">Recent changes.</h2>
   <ol class="cl">
-    <li><h3>v0.1.9</h3><ul>
-      <li>A locked-out login now says how long to wait and sends a <code>Retry-After</code> header, instead of "try again later"</li>
-      <li>The downloads folder has its own plain page, so the package list works without JavaScript</li>
-    </ul></li>
-    <li><h3>v0.1.8</h3><ul>
-      <li>PIN keypads submit at the PIN's real length, so 5 and 6 digit PINs work</li>
-      <li>The Mocks page no longer pushes <strong>New mock</strong> off-screen on laptop widths, and all nine themes apply before the page loads</li>
-      <li>Accessibility: labelled inputs and real expand buttons on list rows</li>
-      <li>Mocks created from a request are named after it, and <strong>New collection</strong> asks for a name</li>
-    </ul></li>
-    <li><h3>v0.1.7</h3><ul>
-      <li>Diameter answers can carry granted units, Validity-Time and Final-Unit-Indication, with matching on Subscription-Id and Rating-Group</li>
-      <li><code>airmock mocks apply</code> gains <code>--dry-run</code> and <code>--atomic</code> and reports unchanged mocks</li>
-      <li>The admin UI binds to loopback by default; cross-site writes and local-address imports are refused</li>
-      <li>SMPP destination matching: prefix, wildcard, regex and numeric range</li>
-      <li>GraphQL inline arguments; HEAD and CORS on the gateway; templates are checked when a mock is saved</li>
-      <li>SMTP refuses a bad sender or recipient at that command, not after the message body</li>
-      <li><code>airmock --version</code> reports the commit and build time</li>
+    <li><h3>v1.0.0 <span class="sr">first open source release</span></h3><ul>
+      <li>First open source release, under the MIT licence, with its source and releases on GitHub</li>
+      <li>Twelve protocols in one binary: REST, SOAP, GraphQL, WebSocket, TCP, SMTP, MQTT, FTP, Kafka, SMPP, Diameter and JMS (AMQP 1.0)</li>
+      <li>Built-in API client with collections and environments, a load tester with percentiles and history, and a certificate store for HTTPS and mTLS</li>
+      <li>Nine themes, an admin UI that listens on loopback by default, and an optional PIN-protected workspace</li>
+      <li>Packages for Linux (.deb, .rpm, tarball), Windows (installer and zip) and macOS (app and archive), built by GitHub Actions from the tag</li>
     </ul></li>
   </ol>
 </section>
@@ -1051,7 +1039,7 @@ systemctl status airmock</pre></div>
     <details><summary>Is it secure to leave running on a network?</summary><p>The admin UI and API listen on loopback only unless you pass <code>--admin-host</code>, and you can protect them with a PIN or password. Cross-site writes are refused and imports cannot reach local services. The mock gateway and protocol ports are unauthenticated, so firewall them to the machines that need them.</p></details>
     <details><summary>Will my mocks survive a restart?</summary><p>Yes. Mocks, scenarios, counters, queued callbacks and the hit log persist. Live sessions, cookie jars and Kafka topic contents reset.</p></details>
     <details><summary>Can I move my setup to another machine?</summary><p>Export a full backup as one JSON file, including certificates, collections and templates, then import it elsewhere. Imports merge and never overwrite.</p></details>
-    <details><summary>Which operating systems are supported?</summary><p>Linux packages (.deb, .rpm and tarball), Windows zip archives and macOS archives are built for amd64 and arm64. The Linux packages are the best tested.</p></details>
+    <details><summary>Which operating systems are supported?</summary><p>Linux packages (.deb, .rpm and tarball), a Windows installer and zip archives, and a macOS app and archives are built for amd64 and arm64. The Linux packages are the best tested.</p></details>
   </div>
 </section>
 
@@ -1366,18 +1354,18 @@ systemctl status airmock</pre></div>
     if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(function(){flash('Copied')},legacy)}else{legacy()}
   };
 
-  // Downloads: read live from the latest GitHub release; falls back to a self-hosted downloads/manifest.json, then to a plain link.
+  // Downloads: read live from the latest GitHub release; if that cannot load, link to the releases page.
   (function(){
     var REPO='addictedabhi/AirMock',meta=document.getElementById('dlmeta'),rows=document.getElementById('dlrows'),links=document.getElementById('dllinks');
     meta.textContent='Loading the package list…';rows.innerHTML='<tr><td colspan="4">Loading the package list…</td></tr>';
     function size(n){return n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB'}
-    function plat(f){var o={linux:'Linux',darwin:'macOS',windows:'Windows'}[f.os]||f.os||'Any',a={amd64:'x86-64',arm64:'ARM64'}[f.arch]||f.arch,k={deb:'.deb package',rpm:'.rpm package',tarball:'archive',zip:'zip archive',installer:'installer'}[f.kind]||f.kind;return [o,a].filter(Boolean).join(' ')+(k?', '+k:'')}
+    function plat(f){var o={linux:'Linux',darwin:'macOS',windows:'Windows'}[f.os]||f.os||'Any',a={amd64:'x86-64',arm64:'ARM64'}[f.arch]||f.arch,k={app:'app bundle',deb:'.deb package',rpm:'.rpm package',tarball:'archive',zip:'zip archive',installer:'installer'}[f.kind]||f.kind;return [o,a].filter(Boolean).join(' ')+(k?', '+k:'')}
     function cell(txt,cls){var td=document.createElement('td');if(cls)td.className=cls;td.textContent=txt;return td}
     function guess(name){
       var n=name.toLowerCase(),f={name:name};
-      f.os=/windows|\.exe$|\.msi$/.test(n)?'windows':/darwin|macos|\.dmg$/.test(n)?'darwin':/linux|\.deb$|\.rpm$/.test(n)?'linux':'';
+      f.os=/windows|\.exe$|\.msi$/.test(n)?'windows':/darwin|macos|\.dmg$|^airmock-[\d.]+-(amd64|arm64)\.zip$/.test(n)?'darwin':/linux|\.deb$|\.rpm$/.test(n)?'linux':'';
       f.arch=/arm64|aarch64/.test(n)?'arm64':/amd64|x86_64|x64/.test(n)?'amd64':'';
-      f.kind=/\.deb$/.test(n)?'deb':/\.rpm$/.test(n)?'rpm':/\.zip$/.test(n)?'zip':/\.(tar\.gz|tgz)$/.test(n)?'tarball':/\.(exe|msi|dmg)$/.test(n)?'installer':'';
+      f.kind=/^airmock-[\d.]+-(amd64|arm64)\.zip$/.test(n)?'app':/\.deb$/.test(n)?'deb':/\.rpm$/.test(n)?'rpm':/\.zip$/.test(n)?'zip':/\.(tar\.gz|tgz)$/.test(n)?'tarball':/\.(exe|msi|dmg)$/.test(n)?'installer':'';
       return f;
     }
     function render(parts,files){
@@ -1394,12 +1382,6 @@ systemctl status airmock</pre></div>
       meta.textContent='The package list could not be loaded right now.';rows.textContent='';
       var tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.innerHTML='Open the <a href="https://github.com/'+REPO+'/releases/latest" rel="noopener">latest release on GitHub</a> to download AirMock.';tr.appendChild(td);rows.appendChild(tr);
     }
-    function local(){
-      return fetch('downloads/manifest.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(m){
-        render([['Version',m.version],['Commit',m.commit],['Built',(m.date||'').slice(0,10)]],(m.files||[]).map(function(f){f.url='downloads/'+encodeURIComponent(f.name);return f}));
-        if(links)links.innerHTML+=' · <a href="downloads/checksums.txt">checksums.txt</a>';setVer(m.version);
-      });
-    }
     fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(rel){
       var skip=/(checksums?|sha256sums?)(\.txt)?$|\.sig$|\.pem$|\.sbom|\.json$|source code/i,sums=null,files=[];
       (rel.assets||[]).forEach(function(a){
@@ -1411,7 +1393,7 @@ systemctl status airmock</pre></div>
       render([['Version',rel.tag_name],['Released',(rel.published_at||'').slice(0,10)]],files);
       if(sums&&links)links.innerHTML+=' · <a href="'+sums+'" rel="noopener">checksums.txt</a>';
       setVer(rel.tag_name);
-    }).catch(function(){local().catch(fail)});
+    }).catch(fail);
   })();
 })();
   // ---- futuristic layer: scroll reveal, tilt, magnetic buttons, cursor glow
