@@ -1,0 +1,1 @@
+ALTER TABLE mocks ADD COLUMN ftp_json TEXT;

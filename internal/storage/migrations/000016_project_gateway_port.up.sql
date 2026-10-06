@@ -1,0 +1,1 @@
+ALTER TABLE mock_projects ADD COLUMN gateway_port INTEGER NOT NULL DEFAULT 0;

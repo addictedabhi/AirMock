@@ -1,0 +1,1 @@
+ALTER TABLE mocks ADD COLUMN mqtt_json TEXT;

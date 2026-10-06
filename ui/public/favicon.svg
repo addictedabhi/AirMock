@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bracketGrad" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#0052cc"/>
+      <stop offset="100%" stop-color="#0a78d4"/>
+    </linearGradient>
+    <filter id="pulseGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4.5"/>
+    </filter>
+  </defs>
+  <path d="M45,20 L20,50 L45,80" fill="none" stroke="url(#bracketGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M55,20 L80,50 L55,80" fill="none" stroke="url(#bracketGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="50" r="10" fill="#22d3ee" filter="url(#pulseGlow)" opacity="0.55"/>
+  <circle cx="50" cy="50" r="9" fill="#22d3ee"/>
+</svg>

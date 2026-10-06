@@ -1,0 +1,1472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AirMock is a free, open source tool: one small binary that mocks REST, SOAP, GraphQL, WebSocket, TCP, SMTP, MQTT, FTP, Kafka, SMPP, Diameter and JMS (AMQP 1.0), with a built-in API client, load tester and certificate store.">
+<title>AirMock: cross-protocol mock server</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="theme-color" content="#F3F7FD" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#060B17" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AirMock">
+<meta property="og:title" content="AirMock: mock every backend you depend on">
+<meta property="og:description" content="One binary mocks REST, SOAP, GraphQL, WebSocket, TCP, SMTP, MQTT, FTP, Kafka, SMPP, Diameter and JMS (AMQP 1.0). Includes an API client, a load tester and a certificate store.">
+<meta property="og:image" content="og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="AirMock logo and the twelve protocols it mocks">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AirMock: mock every backend you depend on">
+<meta name="twitter:description" content="Free and open source. One binary, twelve protocols, no database to install.">
+<meta name="twitter:image" content="og-image.png">
+<!-- Everything the page loads is served from this origin (fonts included), so it works unchanged on an isolated network. frame-ancestors cannot be set from a meta tag: see nginx.conf for the response headers. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'">
+<link rel="preload" href="fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"AirMock","isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT","codeRepository":"https://github.com/addictedabhi/AirMock","applicationCategory":"DeveloperApplication","operatingSystem":"Linux, Windows, macOS","description":"A single-binary, cross-protocol API mocking tool for REST, SOAP, GraphQL, WebSocket, TCP, SMTP, MQTT, FTP, Kafka, SMPP, Diameter and JMS (AMQP 1.0), with a built-in API client, load tester and certificate store.","featureList":["Twelve mock protocol engines","Conditional rules, scenarios, weighted responses, fault injection","API client with collections and load testing","Certificate store with TLS and mutual TLS","Mocks-as-code command line"]}
+</script>
+<style>
+/* Fonts are served from this site (latin subset, variable weights): no third-party request, same look online and offline. */
+@font-face{font-family:'Sora';font-style:normal;font-weight:500 800;font-display:swap;src:url(fonts/sora-latin.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/manrope-latin.woff2) format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400 500;font-display:swap;src:url(fonts/jetbrains-mono-latin.woff2) format('woff2')}
+/* Concept: the AirMock mark (two blue brackets around a glowing cyan dot) is the whole identity. Blue-to-cyan light on deep navy; the pulsing dot is the single motif. */
+:root{
+  --bg:#F3F7FD; --bg2:#E7EFFB; --surface:#FFFFFF; --ink:#0A1630; --muted:#4D5F7E; --line:#D3DEEE;
+  --blue:#0052CC; --blue2:#0A78D4; --cyan:#22D3EE; --cyan-ink:#0A6F84; --grad:linear-gradient(120deg,#0052CC,#0A78D4 55%,#22D3EE);
+  --glow:rgba(10,120,212,.18); --btn-ink:#fff;
+  --wire-bg:#0A1630; --wire-fg:#D6E2F5; --wire-dim:#7D93B8; --wire-sig:#5EE3F5; --wire-warn:#F5B95E;
+  --display:'Sora','Segoe UI',system-ui,sans-serif; --body:'Manrope','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#060B17; --bg2:#0A1326; --surface:#0E182C; --ink:#EAF1FC; --muted:#93A6C6; --line:#1B2A47;
+  --cyan-ink:#5EE3F5; --glow:rgba(34,211,238,.14); --wire-bg:#040813; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#060B17; --bg2:#0A1326; --surface:#0E182C; --ink:#EAF1FC; --muted:#93A6C6; --line:#1B2A47;
+  --cyan-ink:#5EE3F5; --glow:rgba(34,211,238,.14); --wire-bg:#040813; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:16px/1.65 var(--body);margin:0;padding-inline:16px;overflow-x:hidden}
+.wrap{max-width:1120px;margin-inline:auto;position:relative}
+a{color:var(--blue2)} :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.08;text-wrap:balance;letter-spacing:-.02em}
+h2{font-size:clamp(1.8rem,4.2vw,2.8rem);font-weight:700}
+h3{font-size:1.1rem;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:500 .74rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-ink)}
+.eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.lede{color:var(--muted);max-width:60ch;margin-top:16px;font-size:1.04rem}
+.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+section{padding-block:84px;position:relative}
+code{font-family:var(--mono);font-size:.88em;background:var(--bg2);padding:2px 6px;border-radius:5px}
+
+/* backdrop glow */
+.aurora{position:absolute;inset:-120px -40vw auto -40vw;height:760px;pointer-events:none;z-index:0;
+  background:radial-gradient(520px 340px at 72% 30%,var(--glow),transparent 70%),radial-gradient(460px 300px at 18% 8%,rgba(0,82,204,.16),transparent 70%)}
+.grid-bg{position:absolute;inset:0 -40vw auto -40vw;height:760px;pointer-events:none;z-index:0;opacity:.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse 60% 60% at 60% 30%,#000,transparent 75%);mask-image:radial-gradient(ellipse 60% 60% at 60% 30%,#000,transparent 75%)}
+.wrap>*{position:relative;z-index:1}
+
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font:700 1.35rem var(--display);color:var(--ink);text-decoration:none;letter-spacing:-.02em}
+.brand svg{width:34px;height:34px}
+.links{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.links a{color:var(--muted);text-decoration:none;font-size:.92rem;font-weight:600;padding:8px 12px;border-radius:8px}
+.links a:hover{color:var(--ink);background:var(--bg2)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--grad);color:var(--btn-ink)!important;font:700 .95rem var(--body);padding:12px 20px;border-radius:10px;text-decoration:none;border:0;cursor:pointer;box-shadow:0 8px 24px -8px var(--blue2);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px -8px var(--blue2)}
+.btn.ghost{background:transparent;color:var(--ink)!important;border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{background:var(--bg2)}
+.links .btn{padding:8px 14px;color:var(--ink)!important;background:transparent;border:1px solid var(--line);box-shadow:none}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding-block:40px 40px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 14px 6px 8px;font-size:.82rem;font-weight:600;color:var(--muted)}
+.pill b{background:var(--grad);color:#fff;border-radius:99px;padding:2px 10px;font-size:.72rem;letter-spacing:.04em}
+.hero h1{font-size:clamp(2.5rem,6.4vw,4.6rem);font-weight:800;margin-top:20px}
+.hero .lede{font-size:1.14rem}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.install{margin-top:22px;display:flex;border:1px solid var(--line);border-radius:10px;background:var(--surface);font:400 .86rem var(--mono);overflow:hidden;max-width:100%;width:fit-content}
+.install code{background:none;padding:12px 16px;white-space:nowrap;overflow-x:auto;min-width:0}
+.install code::before{content:"$ ";color:var(--cyan-ink)}
+.install button{border:0;border-left:1px solid var(--line);background:var(--bg2);color:var(--muted);padding:0 16px;font:600 .8rem var(--body);cursor:pointer}
+.install button:hover{color:var(--ink)}
+
+/* hero mark */
+.stage{position:relative;aspect-ratio:1/1;max-width:440px;width:100%;margin-inline:auto;display:grid;place-items:center}
+.ring{position:absolute;border-radius:50%;border:1px solid var(--blue2);opacity:.35;inset:0;animation:ripple 5s ease-out infinite}
+.ring:nth-child(2){animation-delay:1.6s} .ring:nth-child(3){animation-delay:3.2s}
+@keyframes ripple{0%{transform:scale(.3);opacity:.6}100%{transform:scale(1);opacity:0}}
+.stage .mark{width:62%;height:62%;position:relative;z-index:2;filter:drop-shadow(0 20px 40px var(--glow))}
+.stage .dot{animation:pulse 2.4s ease-in-out infinite;transform-origin:50px 50px}
+@keyframes pulse{50%{transform:scale(1.35);opacity:.8}}
+.chip{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font:500 .74rem var(--mono);color:var(--muted);box-shadow:0 10px 30px -12px var(--blue2);display:flex;gap:7px;align-items:center;animation:float 6s ease-in-out infinite}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.chip:nth-of-type(1){top:8%;left:0} .chip:nth-of-type(2){top:22%;right:-2%;animation-delay:-2s}
+.chip:nth-of-type(3){bottom:20%;left:-3%;animation-delay:-4s} .chip:nth-of-type(4){bottom:6%;right:6%;animation-delay:-1s}
+@keyframes float{50%{transform:translateY(-8px)}}
+
+/* marquee */
+.marquee{overflow:hidden;border-block:1px solid var(--line);margin-top:24px;padding-block:16px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.track{display:flex;gap:12px;width:max-content;animation:slide 40s linear infinite}
+.track span{font:500 .85rem var(--mono);color:var(--muted);border:1px solid var(--line);background:var(--surface);padding:6px 14px;border-radius:99px;white-space:nowrap}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.stat{padding:22px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.stat b{display:block;font:800 2.4rem/1 var(--display);background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+.stat span{display:block;margin-top:8px;color:var(--muted);font-size:.9rem}
+
+/* unique */
+.unique{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:36px}
+.u{display:grid;grid-template-columns:44px 1fr;gap:16px;padding:24px;border-radius:16px;background:var(--surface);border:1px solid var(--line);transition:border-color .2s,transform .2s;min-width:0}
+.u:hover{border-color:var(--blue2);transform:translateY(-3px)}
+.u .ic{width:44px;height:44px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff}
+.u .ic svg{width:22px;height:22px}
+.u p{color:var(--muted);font-size:.93rem;margin-top:6px}
+
+/* tabs & wire */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:30px}
+.tab{font:500 .84rem var(--mono);padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;transition:all .15s}
+.tab:hover{border-color:var(--blue2);color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--grad);color:#fff;border-color:transparent}
+.explore{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.meta{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;min-width:0}
+.meta dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:.92rem}
+.meta dt{color:var(--muted)} .meta dd{margin:0;min-width:0;font-weight:600}
+.wire{background:var(--wire-bg);color:var(--wire-fg);border-radius:16px;font:400 .82rem/1.7 var(--mono);overflow:hidden;min-width:0;border:1px solid var(--line);box-shadow:0 30px 60px -30px var(--blue)}
+.wire-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid rgba(125,147,184,.18);color:var(--wire-dim);font-size:.74rem}
+.wire-bar::before{content:"";width:9px;height:9px;border-radius:50%;background:#FF5F57;box-shadow:16px 0 0 #FEBC2E,32px 0 0 #28C840;margin-right:36px}
+.wire-bar b{margin-left:auto;color:var(--wire-sig);font-weight:500}
+.wire pre{margin:0;padding:16px;overflow-x:auto;min-height:11.5em;white-space:pre}
+.c-dim{color:var(--wire-dim)} .c-sig{color:var(--wire-sig)} .c-warn{color:var(--wire-warn)}
+.cursor{display:inline-block;width:.55em;height:1em;background:var(--wire-sig);vertical-align:-.15em;animation:blink 1.1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ladder */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+.ladder{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.ladder li{display:grid;grid-template-columns:2.2rem 1fr;gap:12px;padding:14px 18px;border-top:1px solid var(--line);position:relative}
+.ladder li:first-child{border-top:0}
+.ladder li::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--grad);opacity:calc(1 - var(--i)*.13)}
+.ladder .n{font:600 .8rem var(--mono);color:var(--cyan-ink);padding-top:3px}
+.ladder b{display:block;font-weight:700}
+.ladder span{color:var(--muted);font-size:.88rem}
+
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:36px}
+.b{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px;min-width:0;position:relative;overflow:hidden;transition:border-color .2s}
+.b:hover{border-color:var(--blue2)}
+.b.s2{grid-column:span 2}.b.s3{grid-column:span 3}.b.s4{grid-column:span 4}
+.b p{color:var(--muted);font-size:.93rem;margin-top:8px}
+.b .k{font:500 .72rem var(--mono);color:var(--cyan-ink);letter-spacing:.1em;display:block;margin-bottom:12px}
+.b ul{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.b li{font:500 .75rem var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:3px 9px;background:var(--bg2)}
+.b.hl{background:linear-gradient(150deg,var(--blue),var(--blue2));border-color:transparent;color:#fff}
+.b.hl p,.b.hl .k{color:rgba(255,255,255,.82)}
+.b.hl li{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.25)}
+
+.installs{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:32px}
+.installs .wire pre{min-height:0}
+.limits{margin:28px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:12px 32px}
+.limits li{padding-left:20px;position:relative;color:var(--muted);font-size:.93rem}
+.limits li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:2px;background:var(--blue2)}
+.final{margin-top:20px;text-align:center;padding:64px 24px;border-radius:24px;background:linear-gradient(150deg,var(--blue),var(--blue2) 60%,#1BBBD8);color:#fff;position:relative;overflow:hidden}
+.final h2{color:#fff} .final p{opacity:.9;margin:14px auto 0;max-width:50ch}
+.final .btn{background:#fff;color:#0A1630!important;box-shadow:none;margin-top:28px}
+footer{padding-block:36px;color:var(--muted);font-size:.9rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+footer .brand{font-size:1.05rem} footer .brand svg{width:26px;height:26px}
+
+@media (max-width:900px){
+  .hero,.split,.explore,.installs,.unique{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .bento{grid-template-columns:1fr 1fr}.b.s2,.b.s3,.b.s4{grid-column:span 2}
+  .limits{grid-template-columns:1fr} section{padding-block:56px}
+  .stage{max-width:320px}.chip{font-size:.66rem}
+}
+@media (max-width:520px){.bento{grid-template-columns:1fr}.b.s2,.b.s3,.b.s4{grid-column:auto}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* sticky glass nav */
+.navbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;margin-inline:-16px;padding-inline:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.navbar nav{max-width:1120px;margin-inline:auto;padding-block:12px}
+.themebtn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:7px 12px;font:600 .85rem var(--body);cursor:pointer}
+.themebtn i{width:14px;height:14px;border-radius:50%;background:var(--grad);box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--line)}
+.tpop{position:absolute;right:0;top:calc(100% + 10px);width:min(320px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);display:none}
+.tpop.open{display:block}
+.tpop h4{margin:4px 4px 10px;font:600 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tpop .sw{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tpwrap{position:relative}
+
+/* app window */
+.appwin{position:relative;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:0 50px 90px -40px var(--blue),0 0 0 1px color-mix(in srgb,var(--blue2) 10%,transparent);overflow:hidden;transform:perspective(1400px) rotateY(-6deg) rotateX(2deg);transition:transform .4s}
+.appwin:hover{transform:perspective(1400px) rotateY(0) rotateX(0)}
+.aw-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--bg2);font:500 .72rem var(--mono);color:var(--muted)}
+.aw-bar::before{content:"";width:9px;height:9px;border-radius:50%;background:#FF5F57;box-shadow:16px 0 0 #FEBC2E,32px 0 0 #28C840;margin-right:38px}
+.aw-body{display:grid;grid-template-columns:54px 1fr;min-height:330px}
+.aw-side{border-right:1px solid var(--line);padding:14px 0;display:flex;flex-direction:column;align-items:center;gap:14px;background:var(--bg2)}
+.aw-side svg.l{width:26px;height:26px}
+.aw-side i{width:22px;height:6px;border-radius:3px;background:var(--line)}
+.aw-side i.on{background:var(--grad)}
+.aw-main{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.aw-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.kpi small{display:block;color:var(--muted);font:500 .62rem var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.kpi b{font:700 1.15rem var(--display);font-variant-numeric:tabular-nums}
+.spark{height:64px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:6px 8px}
+.spark svg{width:100%;height:100%;display:block}
+.mrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg);font-size:.78rem;min-width:0}
+.mrow em{font:600 .64rem var(--mono);font-style:normal;color:#fff;background:var(--grad);padding:2px 7px;border-radius:5px}
+.mrow span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);color:var(--muted)}
+.mrow u{text-decoration:none;font:600 .64rem var(--mono);color:var(--cyan-ink);display:flex;align-items:center;gap:5px}
+.mrow u::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.badge-mark{position:absolute;z-index:3;right:-14px;top:-26px;width:76px;height:76px;filter:drop-shadow(0 12px 22px var(--glow));animation:float 6s ease-in-out infinite}
+.badge-mark svg{width:100%;height:100%}
+.hero-r{position:relative;min-width:0;padding-top:20px}
+.hero-r .chip{z-index:4}
+.hero-r .chip:nth-of-type(1){top:auto;bottom:-14px;left:-18px}
+.hero-r .chip:nth-of-type(2){top:46%;right:-18px;bottom:auto;left:auto}
+
+/* themes section */
+.themes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:34px}
+.theme{all:unset;box-sizing:border-box;cursor:pointer;display:block;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:12px;transition:transform .2s,border-color .2s}
+.theme:hover{transform:translateY(-3px);border-color:var(--blue2)}
+.theme:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.theme[aria-pressed="true"]{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan)}
+.theme .pv{height:84px;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;border:1px solid rgba(128,128,128,.25)}
+.theme .pv i{display:block;height:7px;border-radius:4px}
+.theme .pv .a{width:46%} .theme .pv .b{width:78%;opacity:.5} .theme .pv .c{width:34%;height:14px;margin-top:auto;border-radius:6px}
+.theme b{display:block;margin-top:10px;font:700 .95rem var(--display)}
+.theme small{color:var(--muted);font-size:.78rem}
+.dots{display:flex;gap:5px;margin-top:8px}.dots span{width:12px;height:12px;border-radius:50%}
+.tnote{margin-top:18px;color:var(--muted);font-size:.9rem}
+
+/* skins: last in the file so they override both light and dark defaults */
+:root[data-skin="daylight"]{color-scheme:light;--bg:#F3F7FD;--bg2:#E7EFFB;--surface:#FFFFFF;--ink:#0A1630;--muted:#4D5F7E;--line:#D3DEEE;--blue:#0052CC;--blue2:#0A78D4;--cyan:#22D3EE;--cyan-ink:#0A6F84;--grad:linear-gradient(120deg,#0052CC,#0A78D4 55%,#22D3EE);--glow:rgba(10,120,212,.18);--wire-bg:#0A1630}
+:root[data-skin="meadow"]{color-scheme:light;--bg:#F2F8F3;--bg2:#E3F0E6;--surface:#FFFFFF;--ink:#10241A;--muted:#4C6656;--line:#CFE2D4;--blue:#1E7A4C;--blue2:#2E9E66;--cyan:#7BDDA8;--cyan-ink:#1B7A4E;--grad:linear-gradient(120deg,#1E7A4C,#2E9E66 55%,#7BDDA8);--glow:rgba(46,158,102,.2);--wire-bg:#0E2418}
+:root[data-skin="rose"]{color-scheme:light;--bg:#FCF3F7;--bg2:#F8E4EE;--surface:#FFFFFF;--ink:#2A1020;--muted:#7A4F66;--line:#EBCFDD;--blue:#B0236F;--blue2:#D6408F;--cyan:#FF8FBF;--cyan-ink:#B0236F;--grad:linear-gradient(120deg,#B0236F,#D6408F 55%,#FF8FBF);--glow:rgba(214,64,143,.2);--wire-bg:#2A1020}
+:root[data-skin="cartoon"]{color-scheme:light;--bg:#FFF8E1;--bg2:#FFEFB8;--surface:#FFFFFF;--ink:#1A1A2E;--muted:#575775;--line:#1A1A2E;--blue:#E63946;--blue2:#2B6CFF;--cyan:#FFC93C;--cyan-ink:#9A5B00;--grad:linear-gradient(120deg,#E63946,#7B2FF7 55%,#2B6CFF);--glow:rgba(43,108,255,.22);--wire-bg:#1A1A2E}
+:root[data-skin="midnight"]{color-scheme:dark;--bg:#060B17;--bg2:#0A1326;--surface:#0E182C;--ink:#EAF1FC;--muted:#93A6C6;--line:#1B2A47;--blue:#0052CC;--blue2:#3B82F6;--cyan:#22D3EE;--cyan-ink:#5EE3F5;--grad:linear-gradient(120deg,#0052CC,#3B82F6 55%,#22D3EE);--glow:rgba(34,211,238,.14);--wire-bg:#040813}
+:root[data-skin="ocean"]{color-scheme:dark;--bg:#04141A;--bg2:#08222B;--surface:#0A1D26;--ink:#E4F6F6;--muted:#86B0B4;--line:#14363F;--blue:#0E7C86;--blue2:#14B8A6;--cyan:#5EEAD4;--cyan-ink:#5EEAD4;--grad:linear-gradient(120deg,#0E7C86,#14B8A6 55%,#5EEAD4);--glow:rgba(20,184,166,.16);--wire-bg:#020D11}
+:root[data-skin="sunset"]{color-scheme:dark;--bg:#160A0A;--bg2:#241010;--surface:#1D0E0D;--ink:#FDEEE3;--muted:#C49A86;--line:#3B1D18;--blue:#D9480F;--blue2:#F97316;--cyan:#FBBF24;--cyan-ink:#FBBF24;--grad:linear-gradient(120deg,#DC2626,#F97316 55%,#FBBF24);--glow:rgba(249,115,22,.18);--wire-bg:#0E0505}
+:root[data-skin="violet"]{color-scheme:dark;--bg:#0D0818;--bg2:#160D2A;--surface:#130B24;--ink:#F1EAFE;--muted:#AC9BCF;--line:#2A1B4A;--blue:#5B21B6;--blue2:#8B5CF6;--cyan:#C4B5FD;--cyan-ink:#C4B5FD;--grad:linear-gradient(120deg,#5B21B6,#8B5CF6 55%,#E879F9);--glow:rgba(139,92,246,.2);--wire-bg:#080413}
+:root[data-skin="cocoa"]{color-scheme:dark;--bg:#14100D;--bg2:#201913;--surface:#1B1510;--ink:#F5EBE0;--muted:#B9A48F;--line:#35291F;--blue:#9A5B25;--blue2:#C98A4B;--cyan:#E8C38E;--cyan-ink:#E8C38E;--grad:linear-gradient(120deg,#9A5B25,#C98A4B 55%,#E8C38E);--glow:rgba(201,138,75,.18);--wire-bg:#0C0907}
+:root[data-skin="cartoon"] .appwin,:root[data-skin="cartoon"] .b,:root[data-skin="cartoon"] .u,:root[data-skin="cartoon"] .stat,:root[data-skin="cartoon"] .meta,:root[data-skin="cartoon"] .theme{border-width:2px;box-shadow:4px 4px 0 var(--ink)}
+:root[data-skin="cartoon"] .btn{box-shadow:3px 3px 0 var(--ink);border:2px solid var(--ink)}
+:root[data-skin="cartoon"] .b.hl{color:#fff}
+@media (max-width:900px){.themes{grid-template-columns:repeat(2,1fr)}.appwin{transform:none}.badge-mark{right:-6px;width:60px;height:60px}}
+@media (max-width:520px){.themes{grid-template-columns:1fr 1fr}.aw-kpis{grid-template-columns:repeat(3,1fr)}.kpi b{font-size:.95rem}.hero-r .chip{display:none}}
+
+/* v4 */
+:root{--btn-bg:linear-gradient(120deg,var(--blue),var(--blue2))}
+.btn,.pill b,.tab[aria-selected="true"],.u .ic,.mrow em{background:var(--btn-bg)}
+.btn.ghost,.links .btn{background:transparent}
+.final .btn{background:#fff}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px;counter-reset:s}
+.step{position:relative;padding:26px;border-radius:18px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--btn-bg);color:#fff;font:700 .9rem var(--display);margin-bottom:14px}
+.step p{color:var(--muted);font-size:.93rem;margin-top:6px}
+.step code{display:inline-block;margin-top:12px}
+.play{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
+.play .panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;min-width:0}
+.play h3{margin-bottom:4px}
+.play .sub{color:var(--muted);font-size:.88rem;margin-bottom:14px}
+.field{display:grid;gap:6px;margin-top:12px;font-size:.85rem;font-weight:600}
+.field input,.field select{font:500 .95rem var(--mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+.field input:focus,.field select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+.rules{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px;font:500 .8rem var(--mono)}
+.rules li{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--muted);background:var(--bg);transition:all .2s}
+.rules li b{color:var(--ink);font-weight:600}
+.rules li.hit{border-color:var(--cyan);color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--cyan) 35%,transparent)}
+.rules li.skip{opacity:.5}
+.rules li i{font-style:normal;margin-left:auto;font-size:.68rem;letter-spacing:.08em}
+.faq{margin-top:34px;display:grid;gap:10px}
+.faq details{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:0 20px}
+.faq summary{cursor:pointer;list-style:none;padding:18px 0;font:600 1rem var(--display);display:flex;justify-content:space-between;gap:16px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--cyan-ink);font:500 1.3rem var(--mono);line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq details p{color:var(--muted);padding:0 0 18px;font-size:.95rem;max-width:70ch}
+@media (max-width:900px){.how,.play{grid-template-columns:1fr}}
+
+/* v5 */
+.navbar{margin-inline:calc(50% - 50vw);padding-inline:max(16px,calc(50vw - 560px))}
+.navbar nav{max-width:none;padding-inline:0}
+.progress{position:fixed;left:0;top:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--grad);z-index:100;pointer-events:none}
+.links a.act:not(.btn){color:var(--ink);background:var(--bg2)}
+section#behaviour,section#themes{box-shadow:0 0 0 100vmax var(--bg2);clip-path:inset(0 -100vmax);background:var(--bg2)}
+section#behaviour .u,section#themes .theme{background:var(--surface)}
+.hero-r .chip:nth-of-type(2){top:30%;right:auto;left:-26px}
+.uses{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px}
+.use{border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--surface);min-width:0;position:relative;overflow:hidden}
+.use::after{content:"";position:absolute;right:-30px;bottom:-30px;width:90px;height:90px;border-radius:50%;background:var(--grad);opacity:.12}
+.use small{display:block;font:500 .7rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--cyan-ink);margin-bottom:8px}
+.use p{color:var(--muted);font-size:.9rem;margin-top:6px}
+.btn:active{transform:translateY(0)}
+@media (max-width:900px){.uses{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.uses{grid-template-columns:1fr}}
+
+/* v6 */
+.hero h1 .grad{background-size:220% 100%;animation:shine 7s ease-in-out infinite alternate}
+@keyframes shine{to{background-position:100% 0}}
+.b,.u,.step,.use,.stat{position:relative}
+.b::before,.u::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .25s;pointer-events:none}
+.b:hover::before,.u:hover::before{opacity:1}
+.replace{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:34px}
+.rp{border:1px solid var(--line);border-radius:18px;background:var(--surface);padding:22px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.rp .was{font:500 .82rem var(--mono);color:var(--muted);text-decoration:line-through;text-decoration-color:var(--cyan);letter-spacing:.02em}
+.rp .arrow{color:var(--cyan-ink);font:600 .75rem var(--mono)}
+.rp p{color:var(--muted);font-size:.9rem}
+.rp.core{background:var(--btn-bg);border-color:transparent;color:#fff;justify-content:center}
+.rp.core p,.rp.core .arrow{color:rgba(255,255,255,.85)}
+.rp.core h3{font-size:1.3rem}
+.chaos{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px;margin-top:40px}
+.chaos .panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;min-width:0}
+.sl{display:grid;gap:6px;margin-top:14px;font-size:.85rem;font-weight:600}
+.sl div{display:flex;justify-content:space-between;color:var(--muted)} .sl output{font:500 .8rem var(--mono);color:var(--ink)}
+.sl input[type=range]{width:100%;accent-color:var(--blue2)}
+.bars{display:flex;align-items:flex-end;gap:4px;height:130px;margin-top:6px}
+.bars i{flex:1;border-radius:4px 4px 2px 2px;background:var(--cyan);min-height:6px;transition:height .25s,background .25s}
+.bars i.e{background:#EF4444}.bars i.t{background:#F59E0B}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font:500 .74rem var(--mono);color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;background:var(--cyan)}
+.legend span.e::before{background:#EF4444}.legend span.t::before{background:#F59E0B}
+.sum{margin-top:10px;font:500 .8rem var(--mono);color:var(--ink)}
+@media (max-width:900px){.replace,.chaos{grid-template-columns:1fr}}
+
+/* v7: responsive hardening */
+@media (min-width:600px) and (max-width:900px){.replace,.unique{grid-template-columns:1fr 1fr}}
+html,body{overflow-x:clip;max-width:100%}
+.bgfx{position:absolute;left:0;right:0;top:0;height:900px;overflow:hidden;pointer-events:none;z-index:0}
+.bgfx .aurora,.bgfx .grid-bg{inset:0;height:auto}
+.navbar{margin-inline:calc(50% - 50vw);padding-inline:max(16px,calc(50vw - 560px))}
+@supports (width:100dvw){.navbar{margin-inline:calc(50% - 50dvw);padding-inline:max(16px,calc(50dvw - 560px))}}
+.links{row-gap:6px}
+img,svg,video{max-width:100%}
+.install{max-width:100%}
+.hero>*,.split>*,.explore>*,.play>*,.chaos>*,.installs>*{min-width:0}
+@media (min-width:1500px){
+  .wrap{max-width:1240px}
+  .navbar{padding-inline:max(16px,calc(50dvw - 620px))}
+  .hero h1{font-size:5rem}
+  body{font-size:17px}
+}
+@media (max-width:900px){
+  .hero{padding-block:24px 24px;gap:56px}
+  .hero-r{padding-top:36px;margin-inline:4px}
+  .appwin{margin-right:0}
+  .badge-mark{right:4px;top:-4px}
+  .wire pre{font-size:.78rem}
+  .final{padding:48px 20px;border-radius:20px}
+  .navbar nav{gap:8px}
+}
+@media (max-width:640px){
+  body{padding-inline:16px}
+  nav .links{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  nav .links::-webkit-scrollbar{display:none}
+  nav .links a,nav .links .themebtn{flex:0 0 auto;white-space:nowrap}
+  .tpwrap{order:-2;flex:0 0 auto}.links .btn{order:-1}
+  .tpop{right:auto;left:0;width:min(300px,calc(100vw - 32px))}
+  .tpwrap{position:static}
+  .tpop{left:16px;right:16px;width:auto;top:100%}
+  .navbar nav{position:relative}
+  .hero h1{font-size:2.35rem}
+  .lede{font-size:1rem}
+  .stats{gap:10px}.stat{padding:16px}.stat b{font-size:1.9rem}
+  .play .panel,.chaos .panel,.meta{padding:18px}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;margin-inline:-16px;padding-inline:16px;padding-bottom:6px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto}
+  .bars{height:100px;gap:2px}
+  .legend{gap:10px}
+  .ladder li{padding:12px 14px}
+  .faq summary{font-size:.95rem}
+  footer{flex-direction:column;align-items:flex-start}
+  .aw-body{grid-template-columns:44px 1fr;min-height:0}
+  .aw-main{padding:12px}
+  .mrow{padding:7px 10px;font-size:.74rem}
+  .install code{font-size:.8rem}
+}
+@media (max-width:380px){
+  .stats{grid-template-columns:1fr}
+  .themes{grid-template-columns:1fr}
+}
+
+/* v8: motion */
+@supports (animation-timeline:view()){
+  .b,.u,.step,.use,.rp,.stat,.theme,.faq details,.play .panel,.chaos .panel,.meta,.ladder,.wire{
+    animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 38%}
+  @keyframes rise{from{opacity:.15;transform:translateY(34px) scale(.98)}to{opacity:1;transform:none}}
+}
+.spot{--mx:50%;--my:50%}
+.spot::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(260px circle at var(--mx) var(--my),color-mix(in srgb,var(--cyan) 22%,transparent),transparent 65%)}
+.spot:hover::after{opacity:1}
+.b.hl.spot::after{background:radial-gradient(260px circle at var(--mx) var(--my),rgba(255,255,255,.22),transparent 65%)}
+.btn{position:relative;overflow:hidden}
+.btn:not(.ghost)::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:sheen 4.5s ease-in-out infinite}
+@keyframes sheen{0%,60%{left:-60%}100%{left:130%}}
+.links .btn::after{display:none}
+.spark path:last-of-type{stroke-dasharray:420;stroke-dashoffset:420;animation:draw 2.4s .4s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.mrow{animation:slidein .6s both}
+.mrow:nth-of-type(1){animation-delay:.5s}.mrow:nth-of-type(2){animation-delay:.7s}.mrow:nth-of-type(3){animation-delay:.9s}.mrow:nth-of-type(4){animation-delay:1.1s}
+@keyframes slidein{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.mrow u::before{animation:pulse2 2s ease-in-out infinite}
+@keyframes pulse2{50%{transform:scale(1.7);opacity:.5}}
+.ladder li.cur{background:color-mix(in srgb,var(--cyan) 12%,transparent)}
+.ladder li.cur .n{color:var(--ink)}
+.ladder li{transition:background .35s}
+.tl{animation:tline .35s both}
+@keyframes tline{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.final{background-size:200% 200%;animation:bgmove 10s ease-in-out infinite alternate}
+@keyframes bgmove{to{background-position:100% 100%}}
+.final::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;left:50%;top:-220px;transform:translateX(-50%);background:radial-gradient(circle,rgba(255,255,255,.28),transparent 65%);animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{50%{transform:translateX(-50%) scale(1.25);opacity:.6}}
+.eyebrow::before{animation:pulse2 2.4s ease-in-out infinite}
+.tab{transition:transform .15s,background .2s,color .2s,border-color .2s}.tab:hover{transform:translateY(-2px)}
+.u .ic{transition:transform .3s}.u:hover .ic{transform:rotate(-8deg) scale(1.08)}
+.rp{transition:transform .25s,border-color .25s}.rp:hover{transform:translateY(-4px);border-color:var(--blue2)}
+.theme .pv{transition:transform .3s}.theme:hover .pv{transform:scale(1.04) rotate(-1deg)}
+
+/* v9: futuristic */
+#net{position:absolute;inset:0;width:100%;height:100%;opacity:.85}
+.hero h1 .grad{filter:drop-shadow(0 0 18px color-mix(in srgb,var(--cyan) 45%,transparent))}
+.appwin{transform:perspective(1400px) rotateY(var(--ry,-6deg)) rotateX(var(--rx,2deg));transition:transform .25s ease-out}
+.appwin:hover{transform:perspective(1400px) rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg))}
+.wire pre{background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px)}
+.wire{position:relative}
+.wire::after{content:"";position:absolute;left:0;right:0;top:-30%;height:30%;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--wire-sig) 14%,transparent),transparent);animation:scan 6s linear infinite;pointer-events:none}
+@keyframes scan{to{top:110%}}
+.stat::before,.stat::after,.rp::before,.rp::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--cyan);opacity:.7;pointer-events:none;transition:all .25s}
+.stat::before,.rp::before{top:8px;left:8px;border-right:0;border-bottom:0;border-top-left-radius:4px}
+.stat::after,.rp::after{bottom:8px;right:8px;border-left:0;border-top:0;border-bottom-right-radius:4px;background:none;inset:auto 8px 8px auto;opacity:.7}
+.stat:hover::before,.stat:hover::after,.rp:hover::before,.rp:hover::after{width:22px;height:22px;opacity:1}
+.rp.core::before,.rp.core::after{display:none}
+.boot{margin-top:22px;max-width:520px;box-shadow:0 20px 50px -28px var(--blue)}
+.boot pre{min-height:0;padding:14px 16px;font-size:.78rem;line-height:1.7;overflow-x:auto}
+.boot::after{display:none}
+.ok{color:var(--wire-sig)}
+.orbitwrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:center;margin-top:30px}
+.orbit{position:relative;width:100%;max-width:560px;aspect-ratio:1/1;margin-inline:auto}
+.orbit .core{position:absolute;inset:36%;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--cyan) 22%,transparent),transparent 70%);z-index:3}
+.orbit .core svg{width:62%;height:62%;filter:drop-shadow(0 0 16px var(--cyan))}
+.ring{position:absolute;border-radius:50%;border:1px dashed color-mix(in srgb,var(--blue2) 55%,transparent);animation:spin linear infinite;transform-origin:50% 50%;opacity:1;pointer-events:none}
+.ring.r1{inset:26%;animation-duration:38s}
+.ring.r2{inset:13%;animation-duration:58s;animation-direction:reverse}
+.ring.r3{inset:0;animation-duration:84s}
+@keyframes spin{to{transform:rotate(360deg)}}
+.orbit:hover .ring,.orbit:hover .nd i{animation-play-state:paused}
+.nd{position:absolute;transform:translate(-50%,-50%);z-index:4;pointer-events:none}
+.nd i{display:block;animation:spin linear infinite reverse;animation-duration:inherit}
+.r1 .nd i{animation-duration:38s}.r2 .nd i{animation-duration:58s;animation-direction:normal}.r3 .nd i{animation-duration:84s}
+.nd button{all:unset;pointer-events:auto;cursor:pointer;display:block;font:500 .72rem var(--mono);padding:6px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--blue2);color:var(--ink);box-shadow:0 0 14px color-mix(in srgb,var(--cyan) 35%,transparent);white-space:nowrap;transition:transform .2s,background .2s}
+.nd button:hover,.nd button:focus-visible{transform:scale(1.18);background:var(--btn-bg);color:#fff;outline:none}
+.pulse-ring{position:absolute;inset:36%;border-radius:50%;border:2px solid var(--cyan);animation:ripple 4s ease-out infinite;opacity:0}
+.pulse-ring:nth-of-type(2){animation-delay:2s}
+@media (max-width:900px){.orbitwrap{grid-template-columns:1fr}.orbit{max-width:420px}}
+@media (max-width:520px){.nd button{font-size:.62rem;padding:4px 8px}.orbit{width:calc(100% - 64px)}}
+:root[data-skin="midnight"] body{background-image:radial-gradient(900px 500px at 85% -10%,rgba(34,211,238,.10),transparent 60%),radial-gradient(700px 500px at -10% 30%,rgba(0,82,204,.18),transparent 60%)}
+
+/* v9b: brighter gradient text on dark */
+:root{--gt:var(--grad)}
+:root[data-skin="midnight"],:root[data-skin="ocean"],:root[data-skin="sunset"],:root[data-skin="violet"],:root[data-skin="cocoa"],:root[data-theme="dark"]:not([data-skin]){--gt:linear-gradient(120deg,var(--blue2),var(--cyan))}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]):not([data-skin]){--gt:linear-gradient(120deg,var(--blue2),var(--cyan))}}
+.grad,.stat b{background-image:var(--gt)}
+.grad{background-size:220% 100%}
+
+/* v10: skip link, screenshots, tables, downloads, changelog */
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip{position:fixed;left:16px;top:-80px;z-index:200;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none;transition:top .15s}
+.skip:focus{top:12px}
+main:focus{outline:none}
+.illus{position:absolute;left:12px;bottom:-30px;font:500 .7rem var(--mono);color:var(--muted);letter-spacing:.04em}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+.shot{margin:0;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);min-width:0}
+.shot img{display:block;width:100%;height:auto}
+.shot figcaption{padding:12px 16px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line)}
+.tblwrap{margin-top:30px;overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+table.tbl{border-collapse:collapse;width:100%;min-width:760px;font-size:.88rem}
+.tbl th,.tbl td{text-align:left;vertical-align:top;padding:12px 14px;border-top:1px solid var(--line)}
+.tbl thead th{border-top:0;background:var(--bg2);font:600 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tbl td{color:var(--muted)} .tbl td:first-child{color:var(--ink);font-weight:700;white-space:nowrap}
+.dl-meta{display:flex;gap:10px 20px;flex-wrap:wrap;margin-top:18px;font:500 .8rem var(--mono);color:var(--muted)}
+.dl-meta b{color:var(--ink);font-weight:600}
+.dl a{font-weight:700;word-break:break-all}
+.hash{font:400 .72rem var(--mono);color:var(--muted);word-break:break-all}
+.cl{margin:30px 0 0;padding:0;list-style:none;display:grid;gap:14px}
+.cl>li{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:18px 20px}
+.cl h3{margin-bottom:8px}
+.cl ul{margin:0;padding-left:18px;color:var(--muted);font-size:.93rem}
+.cl ul li{margin:3px 0}
+@media (max-width:900px){.shots{grid-template-columns:1fr}.illus{position:static;display:block;margin-top:8px}}
+
+/* v11: screenshot gallery, lightbox, extra motion */
+.gallery{margin-top:34px}
+.g-stage{position:relative;aspect-ratio:16/9;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:var(--surface);box-shadow:0 40px 80px -40px var(--blue),0 0 0 1px color-mix(in srgb,var(--blue2) 10%,transparent)}
+.g-slides{position:absolute;inset:0}
+.g-slide{position:absolute;inset:0;margin:0;opacity:0;transform:scale(1.05);transition:opacity .75s ease,transform 1.6s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+.g-slide.on{opacity:1;transform:none}
+.g-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.g-open{position:absolute;inset:0;z-index:2;background:transparent;border:0;padding:0;cursor:zoom-in}
+.g-open:focus-visible{outline:3px solid var(--cyan);outline-offset:-3px}
+.g-hint{position:absolute;right:14px;bottom:16px;z-index:3;font:500 .74rem var(--mono);padding:6px 12px;border-radius:99px;background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);color:var(--muted);backdrop-filter:blur(8px);pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s}
+.g-stage:hover .g-hint,.g-stage:focus-within .g-hint{opacity:1;transform:none}
+.g-nav{position:absolute;top:50%;z-index:3;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 86%,transparent);backdrop-filter:blur(8px);color:var(--ink);font:400 1.6rem/1 var(--body);cursor:pointer;transition:transform .2s,background .2s}
+.g-nav:hover{transform:translateY(-50%) scale(1.1);background:var(--surface)}
+.g-nav.prev{left:14px}.g-nav.next{right:14px}
+.g-badge{position:absolute;left:14px;top:14px;z-index:3;display:flex;align-items:center;gap:8px;font:500 .74rem var(--mono);padding:6px 12px;border-radius:99px;background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);backdrop-filter:blur(8px);color:var(--ink)}
+.g-badge i{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.g-progress{position:absolute;left:0;right:0;bottom:0;height:4px;z-index:3;background:color-mix(in srgb,var(--line) 70%,transparent)}
+.g-progress i{display:block;height:100%;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--grad)}
+.g-progress i.run{animation:gprog var(--gdur,6.5s) linear forwards}
+.gallery.paused .g-progress i.run{animation-play-state:paused}
+@keyframes gprog{to{transform:scaleX(1)}}
+.g-cap{margin-top:20px;min-height:6.2em}
+.g-cap h3{font-size:1.25rem;animation:capin .5s both}
+.g-cap p{color:var(--muted);max-width:72ch;margin-top:6px;animation:capin .5s .08s both}
+@keyframes capin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.g-thumbs{display:flex;gap:12px;margin-top:10px;overflow-x:auto;padding:6px 4px 12px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.g-thumb{flex:0 0 auto;width:168px;border:2px solid var(--line);border-radius:12px;padding:0;background:var(--surface);cursor:pointer;overflow:hidden;opacity:.68;scroll-snap-align:center;text-align:left;transition:transform .25s,opacity .25s,border-color .25s,box-shadow .25s}
+.g-thumb:hover{opacity:1;transform:translateY(-3px)}
+.g-thumb img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.g-thumb span{display:block;padding:6px 9px;font:600 .74rem var(--body);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g-thumb[aria-current="true"]{border-color:var(--cyan);opacity:1;transform:translateY(-4px);box-shadow:0 14px 28px -14px var(--blue2)}
+.g-thumb[aria-current="true"] span{color:var(--ink)}
+.lb{position:fixed;inset:0;z-index:300;display:grid;place-items:center;opacity:0;transition:opacity .28s}
+.lb[hidden]{display:none}
+.lb.open{opacity:1}
+.lb-bg{position:absolute;inset:0;background:rgba(3,7,16,.9);backdrop-filter:blur(6px)}
+.lb-body{position:relative;max-width:min(96vw,1600px);max-height:88vh;overflow:auto;border-radius:12px;box-shadow:0 40px 100px -20px #000;transform:scale(.93);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.lb.open .lb-body{transform:none}
+.lb-body img{display:block;width:100%;height:auto;cursor:zoom-in}
+.lb.zoom .lb-body img{width:1600px;max-width:none;cursor:zoom-out}
+.lb-cap{position:fixed;left:0;right:0;bottom:12px;z-index:2;text-align:center;color:#EAF1FC;font:500 .9rem var(--body);padding:0 70px;pointer-events:none;text-shadow:0 1px 8px #000}
+.lb-x,.lb-nav{position:fixed;z-index:3;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(15,23,42,.7);color:#fff;font:400 1.7rem/1 var(--body);cursor:pointer;transition:transform .2s,background .2s}
+.lb-x:hover,.lb-nav:hover{background:rgba(15,23,42,.95);transform:scale(1.08)}
+.lb-x{top:16px;right:16px}.lb-nav{top:50%;margin-top:-24px}.lb-nav.prev{left:16px}.lb-nav.next{right:16px}
+.lb-x:focus-visible,.lb-nav:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+
+/* orbit: comets travelling the rings, and a flash on the explorer when a node jumps to it */
+.ring .comet{position:absolute;inset:-1px;border-radius:50%;pointer-events:none;background:conic-gradient(from 0deg,transparent 0 80%,color-mix(in srgb,var(--cyan) 90%,transparent) 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));animation:spin 5s linear infinite}
+.ring.r2 .comet{animation-duration:7s;animation-direction:reverse}.ring.r3 .comet{animation-duration:9s}
+.nd button:hover::after,.nd button:focus-visible::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);white-space:normal;width:max-content;max-width:210px;text-align:center;font:500 .72rem/1.35 var(--body);padding:7px 10px;border-radius:8px;background:var(--ink);color:var(--bg);box-shadow:0 10px 24px -8px rgba(0,0,0,.5);pointer-events:none}
+.nd button{position:relative}
+.explore.flash .meta,.explore.flash .wire{animation:flash 1s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cyan) 70%,transparent)}60%{box-shadow:0 0 0 14px transparent}100%{box-shadow:none}}
+
+/* hero entrance, headline underline sweep, drifting light */
+.hero .pill,.hero h1,.hero .lede,.hero .cta,.hero .install,.hero .boot{animation:heroin .8s cubic-bezier(.2,.7,.2,1) both}
+.hero .pill{animation-delay:.05s}.hero h1{animation-delay:.15s}.hero .lede{animation-delay:.3s}.hero .cta{animation-delay:.42s}.hero .install{animation-delay:.52s}.hero .boot{animation-delay:.62s}
+@keyframes heroin{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+section>h2{position:relative;padding-bottom:12px}
+section>h2::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:min(180px,40%);border-radius:3px;background:var(--grad)}
+@supports (animation-timeline:view()){
+  section>h2::after{transform-origin:0 50%;animation:ulsweep linear both;animation-timeline:view();animation-range:entry 10% entry 70%}
+  @keyframes ulsweep{from{transform:scaleX(0)}to{transform:none}}
+}
+.aurora{animation:drift 22s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate3d(-2%,0,0) scale(1)}to{transform:translate3d(3%,2%,0) scale(1.08)}}
+@media (max-width:640px){.g-nav{width:38px;height:38px}.g-thumb{width:128px}.g-cap{min-height:7.4em}.lb-nav{display:none}.lb-cap{padding:0 16px}}
+/* ---- futuristic layer: scroll reveal, rotating borders, HUD frames, cursor glow, scanline ---- */
+@property --ang{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes spin-ang{to{--ang:360deg}}
+@keyframes scan{0%{transform:translateY(-120%)}100%{transform:translateY(900%)}}
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cyan) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+@keyframes floaty{0%,100%{translate:0 0}50%{translate:0 -10px}}
+@keyframes blink-dot{50%{opacity:.25}}
+.js-rv .rv{opacity:0;transform:translate3d(0,44px,0) scale(.96);transition:opacity .6s ease var(--d,0s),transform .9s cubic-bezier(.16,1,.3,1) var(--d,0s);will-change:transform,opacity}
+.js-rv .rv.from-l{transform:translate3d(-56px,0,0) scale(.97)}
+.js-rv .rv.from-r{transform:translate3d(56px,0,0) scale(.97)}
+.js-rv section>h2.rv{transform:none;clip-path:inset(0 100% 0 0);transition:clip-path .9s cubic-bezier(.16,1,.3,1) var(--d,0s),opacity .5s ease var(--d,0s)}
+.js-rv section>h2.rv.in{clip-path:inset(0 0 -20% 0)}
+.js-rv .rv.in{opacity:1;transform:none;will-change:auto}
+/* rotating gradient border on the primary buttons and hero window */
+.hero .btn:not(.ghost),.final .btn{isolation:isolate}
+.hero .btn:not(.ghost)::before{content:"";position:absolute;inset:-2px;z-index:-1;border-radius:inherit;background:conic-gradient(from var(--ang),transparent 0 55%,var(--cyan),#fff,var(--cyan),transparent 90%);animation:spin-ang 3.2s linear infinite}
+.hero .btn:not(.ghost)::after{content:"";position:absolute;inset:1px;z-index:-1;border-radius:inherit;background:var(--grad)}
+.appwin::before{content:"";position:absolute;inset:0;z-index:2;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--ang),transparent 0 60%,var(--cyan),transparent 95%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:spin-ang 6s linear infinite;pointer-events:none;opacity:.9}
+.g-stage::before{content:"";position:absolute;inset:0;z-index:3;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--ang),transparent 0 65%,var(--cyan),transparent 95%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:spin-ang 7s linear infinite;pointer-events:none}
+/* HUD scanline sweeping across the gallery stage */
+.g-stage::after{content:"";position:absolute;left:0;right:0;top:0;height:10%;z-index:2;pointer-events:none;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--cyan) 14%,transparent),transparent);animation:scan 5.5s linear infinite}
+/* live status dot on the pill */
+.hero .pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--cyan);animation:pulse-ring 1.8s ease-out infinite,blink-dot 3s ease-in-out infinite;flex:none}
+.badge-mark{animation:floaty 6s ease-in-out infinite}
+/* pointer glow that follows the cursor across the page */
+#cglow{position:fixed;left:0;top:0;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;pointer-events:none;z-index:0;opacity:0;transition:opacity .4s;background:radial-gradient(circle,color-mix(in srgb,var(--cyan) 13%,transparent),transparent 62%);will-change:transform}
+#cglow.on{opacity:1}
+/* cards: lift + neon edge on hover, with a 3D tilt driven by --tx/--ty */
+.b,.u,.stat,.meta,.theme{transition:transform .25s ease-out,border-color .25s,box-shadow .25s}
+@media (hover:hover){
+ .b:hover,.u:hover,.stat:hover,.meta:hover,.theme:hover{border-color:color-mix(in srgb,var(--cyan) 70%,var(--line));box-shadow:0 18px 50px -22px var(--blue2),0 0 0 1px color-mix(in srgb,var(--cyan) 30%,transparent)}
+ .tilt{transform:perspective(900px) rotateX(var(--tx,0deg)) rotateY(var(--ty,0deg)) translateZ(0)}
+}
+/* animated underline on nav links */
+.links a:not(.btn){position:relative}
+.links a:not(.btn)::after{content:"";position:absolute;left:12px;right:12px;bottom:4px;height:2px;border-radius:2px;background:var(--grad);transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.links a:not(.btn):hover::after,.links a.act::after{transform:scaleX(1)}
+/* section headings get a quick neon flicker on reveal */
+@keyframes flick{0%,100%{text-shadow:none}8%{text-shadow:0 0 18px var(--cyan)}16%{text-shadow:none}30%{text-shadow:0 0 12px var(--cyan)}}
+.js-rv section>h2.in{animation:flick 1.2s ease-out .2s 1}
+@media (max-width:640px){#cglow{display:none}.js-rv .rv{transform:translateY(24px)}.js-rv .rv.from-l,.js-rv .rv.from-r{transform:translateY(24px)}}
+/* hovered node's ring and node rise above every other ring so its tooltip is never covered */
+.ring:has(.nd button:hover,.nd button:focus-visible){z-index:20}
+.nd:has(button:hover,button:focus-visible){z-index:30}
+/* ---- richer screenshot cards + mouse-driven strip scrolling ---- */
+.g-thumbs{position:relative;gap:14px;padding:14px 8px 18px;scroll-snap-type:none;scrollbar-width:none;-webkit-mask:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent);mask:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent)}
+.g-thumbs::-webkit-scrollbar{display:none}
+.g-thumb{position:relative;width:210px;border-radius:14px;opacity:.78;display:grid;text-align:left;background:linear-gradient(160deg,var(--surface),color-mix(in srgb,var(--surface) 70%,var(--blue)));transform-style:preserve-3d;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .3s,border-color .3s,box-shadow .35s}
+.g-thumb img{transition:filter .4s;filter:saturate(.8) brightness(.9)}
+.g-thumb:hover{opacity:1;transform:translateY(-8px) scale(1.05);border-color:color-mix(in srgb,var(--cyan) 70%,var(--line));box-shadow:0 22px 40px -18px var(--blue2),0 0 0 1px color-mix(in srgb,var(--cyan) 35%,transparent)}
+.g-thumb:hover img,.g-thumb[aria-current="true"] img{filter:none}
+.g-thumb b{position:absolute;top:8px;left:8px;font:700 .68rem var(--mono);letter-spacing:.06em;padding:2px 7px;border-radius:99px;color:#fff;background:rgba(5,10,22,.72);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.18)}
+.g-thumb em{display:flex;align-items:center;gap:6px;padding:0 9px 9px;font:600 .66rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--cyan-ink);font-style:normal}
+.g-thumb em::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--grad);box-shadow:0 0 8px var(--cyan)}
+.g-thumb::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%)}
+.g-thumb:hover::after{transform:translateX(120%);transition:transform .8s ease}
+.g-thumb[aria-current="true"]{opacity:1;transform:translateY(-8px) scale(1.04);border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 20px 44px -16px var(--blue2),0 0 30px -6px color-mix(in srgb,var(--cyan) 55%,transparent)}
+.g-thumb[aria-current="true"] b{background:var(--grad);border-color:transparent}
+.g-hint{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0 0;font:500 .72rem var(--mono);color:var(--muted);letter-spacing:.04em}
+.g-hint i{display:inline-block;width:26px;height:2px;background:var(--grad);border-radius:2px;animation:hintx 1.8s ease-in-out infinite alternate}
+@keyframes hintx{to{transform:translateX(10px)}}
+@media (max-width:640px){.g-thumb{width:150px}.g-hint{display:none}}
+#open-source .uses{grid-template-columns:repeat(3,1fr)}
+@media (max-width:900px){#open-source .uses{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="bg1" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#0052cc"/><stop offset="100%" stop-color="#0a78d4"/></linearGradient>
+    <filter id="pg" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4.5"/></filter>
+    <symbol id="logo" viewBox="0 0 100 100">
+      <path d="M45,20 L20,50 L45,80" fill="none" stroke="url(#bg1)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M55,20 L80,50 L55,80" fill="none" stroke="url(#bg1)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="50" cy="50" r="10" fill="#22d3ee" filter="url(#pg)" opacity=".55"/>
+      <circle cx="50" cy="50" r="9" fill="#22d3ee"/>
+    </symbol>
+  </defs>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+<div class="progress" id="prog"></div>
+<div class="bgfx" aria-hidden="true"><div class="aurora"></div><div class="grid-bg"></div><canvas id="net"></canvas></div>
+<div class="wrap">
+<div class="navbar"><nav>
+  <a class="brand" href="#top" aria-label="AirMock home"><svg aria-hidden="true" focusable="false"><use href="#logo"/></svg>AirMock</a>
+  <div class="links">
+    <a href="#why">Why AirMock</a><a href="#protocols">Protocols</a><a href="#features">Features</a><a href="#security">Security</a><a href="#downloads">Downloads</a><a href="#faq">FAQ</a>
+    <div class="tpwrap"><button class="themebtn" id="tbtn" type="button" aria-haspopup="true" aria-expanded="false"><i></i><span id="tname">System</span></button>
+      <div class="tpop" id="tpop" role="menu"><h4>Theme</h4><div class="sw" id="tsw"></div></div></div>
+    <a class="btn" href="https://github.com/addictedabhi/AirMock" rel="noopener">★ GitHub</a>
+  </div>
+</nav></div>
+
+<main id="main" tabindex="-1">
+<header class="hero" id="top">
+  <div>
+    <span class="pill"><b>12 PROTOCOLS</b> open source, one binary, one admin UI</span>
+    <h1>Mock <span class="grad">every backend</span> you depend on.</h1>
+    <p class="lede">AirMock stands in for REST, SOAP, GraphQL, WebSocket, TCP, SMTP, MQTT, FTP, Kafka, SMPP, Diameter and JMS (AMQP 1.0) systems. It also includes an API client, a load tester and a certificate store. No runtime and no database to install.</p>
+    <div class="cta">
+      <a class="btn" href="#downloads">Download AirMock</a>
+      <a class="btn ghost" href="#why">What makes it different</a>
+      <a class="btn ghost" href="https://github.com/addictedabhi/AirMock" rel="noopener">★ Star on GitHub</a>
+    </div>
+    <div class="install"><code id="qs">airmock serve</code><button id="copyQs" type="button">Copy</button></div>
+    <div class="wire boot" aria-label="Startup log"><div class="wire-bar"><span>terminal</span><b>airmock</b></div><pre id="bootlog"><span class="c-dim">$</span> airmock serve
+<span class="ok">✓</span> admin ui    http://localhost:8080
+<span class="ok">✓</span> gateway     :8081
+<span class="ok">✓</span> engines     12 protocols ready</pre></div>
+  </div>
+  <div class="hero-r">
+    <div class="badge-mark" aria-hidden="true"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#logo"/></svg></div>
+    <div class="appwin" aria-label="AirMock dashboard preview">
+      <div class="aw-bar">localhost:8080 / Dashboard (illustrative)</div>
+      <div class="aw-body">
+        <div class="aw-side"><svg class="l" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#logo"/></svg><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <div class="aw-main">
+          <div class="aw-kpis">
+            <div class="kpi"><small>Mocks</small><b>24</b></div>
+            <div class="kpi"><small>Sessions</small><b>7</b></div>
+            <div class="kpi"><small>p95</small><b>12ms</b></div>
+          </div>
+          <div class="spark"><svg viewBox="0 0 200 50" preserveAspectRatio="none" aria-hidden="true" focusable="false"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".45"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></linearGradient></defs><path d="M0 38 L20 30 L40 34 L60 18 L80 24 L100 12 L120 22 L140 10 L160 20 L180 8 L200 14 L200 50 L0 50Z" fill="url(#sg)"/><path d="M0 38 L20 30 L40 34 L60 18 L80 24 L100 12 L120 22 L140 10 L160 20 L180 8 L200 14" fill="none" stroke="#22d3ee" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+          <div class="mrow"><em>GET</em><span>/orders/{id}</span><u>200</u></div>
+          <div class="mrow"><em>SMPP</em><span>submit_sm → 15551234</span><u>DELIVRD</u></div>
+          <div class="mrow"><em>MQTT</em><span>sensors/+ → alerts/1</span><u>live</u></div>
+          <div class="mrow"><em>DIA</em><span>CCR initial</span><u>2001</u></div>
+        </div>
+      </div>
+    </div>
+    <span class="illus">Illustrative preview. Real screenshots are further down.</span>
+    <span class="chip"><i></i>9 themes</span>
+    <span class="chip"><i></i>12 protocols</span>
+  </div>
+</header>
+
+<div class="marquee" aria-label="Supported protocols"><div class="track" id="track"></div></div>
+
+<div class="stats">
+  <div class="stat"><b>12</b><span>protocols, each on a real listener</span></div>
+  <div class="stat"><b>1</b><span>static binary with the UI embedded</span></div>
+  <div class="stat"><b>0</b><span>external databases or runtimes</span></div>
+  <div class="stat"><b>50</b><span>concurrent workers in the load tester</span></div>
+</div>
+
+<section style="padding-block:56px 0">
+  <p class="eyebrow">How it works</p>
+  <h2 style="margin-top:14px">From nothing to a working mock.</h2>
+  <div class="how">
+    <div class="step"><h3>Start the server</h3><p>Run one command. The admin UI opens in your browser and the mock gateway starts listening.</p><code>airmock serve</code></div>
+    <div class="step"><h3>Create a mock</h3><p>Pick a protocol and a quick-start template, or import a WSDL, OpenAPI file, HAR capture or Postman collection.</p><code>REST · SOAP · MQTT · SMPP …</code></div>
+    <div class="step"><h3>Point your app at it</h3><p>Change one host or port. Every hit appears in the log with its full request and response, live as it happens.</p><code>localhost:8081</code></div>
+  </div>
+</section>
+
+<section id="screens" style="padding-block:20px 0">
+  <p class="eyebrow">In the product</p>
+  <h2 style="margin-top:14px">The real admin UI.</h2>
+  <p class="lede">Nine screens of AirMock itself, each in a different one of its nine themes. They play on their own; hover to pause, use the arrows or thumbnails, or open any one full size.</p>
+  <div class="gallery" id="gallery" role="region" aria-roledescription="carousel" aria-label="AirMock screenshots">
+    <div class="g-stage" id="gStage">
+      <div class="g-slides" id="gSlides"></div>
+      <button type="button" class="g-open" id="gOpen" aria-label="Open this screenshot full size"></button>
+      <span class="g-badge"><i></i><span id="gTheme"></span></span>
+      <button type="button" class="g-nav prev" id="gPrev" aria-label="Previous screenshot">&#8249;</button>
+      <button type="button" class="g-nav next" id="gNext" aria-label="Next screenshot">&#8250;</button>
+      <span class="g-hint">Click for full size</span>
+      <div class="g-progress" aria-hidden="true"><i id="gBar"></i></div>
+    </div>
+    <div class="g-cap" aria-live="polite"><h3 id="gTitle"></h3><p id="gDesc"></p></div>
+    <div class="g-thumbs" id="gThumbs" role="group" aria-label="Choose a screenshot"></div>
+    <p class="g-hint" aria-hidden="true"><i></i>move the mouse left or right over the cards to scroll</p>
+    <noscript><p class="lede">The gallery needs JavaScript. The screenshots are in the <a href="shots/dashboard.webp">shots folder</a>: dashboard, mock-detail, diameter-editor, collections-request, load-test, log-history, certificates, settings and mocks-list.</p></noscript>
+  </div>
+  <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Screenshot, full size">
+    <div class="lb-bg" id="lbBg"></div>
+    <div class="lb-body" id="lbBody"><img id="lbImg" width="1600" height="900" alt="" title="Click to zoom"></div>
+    <p class="lb-cap" id="lbCap"></p>
+    <button type="button" class="lb-x" id="lbX" aria-label="Close full size view">&times;</button>
+    <button type="button" class="lb-nav prev" id="lbPrev" aria-label="Previous screenshot">&#8249;</button>
+    <button type="button" class="lb-nav next" id="lbNext" aria-label="Next screenshot">&#8250;</button>
+  </div>
+</section>
+
+<section id="why">
+  <p class="eyebrow">Why AirMock is different</p>
+  <h2 style="margin-top:14px">More than an HTTP stub.</h2>
+  <p class="lede">Mock tools usually centre on HTTP. AirMock also covers the systems that talk SMS, billing, queues and mail, and keeps everything you need to test them in one place.</p>
+  <div class="unique">
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg></div><div><h3>Twelve protocols, one tool</h3><p>Telecom and enterprise protocols (SMPP, Diameter, AMQP 1.0, Kafka) sit beside REST and SOAP, with the same templates, rules and logs.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h10M4 17h6"/><circle cx="18" cy="16" r="3"/></svg></div><div><h3>Mock, call and load test together</h3><p>The built-in Postman-style client and load tester call your mocks or the real service, and every call lands in the same log.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12l5 5L20 7"/></svg></div><div><h3>Mocks that answer for a reason</h3><p>A fixed ladder decides every response, from proxy to static body, so you can always tell why a reply came back.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><div><h3>Push to connected clients</h3><p>See who is attached over TCP, WebSocket, MQTT, SMPP or JMS, then send a message down their socket on demand.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg></div><div><h3>Callbacks that survive a restart</h3><p>Async webhooks and emails are queued in the database with retries and backoff, so a restart does not lose them.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg></div><div><h3>Record real traffic, promote it</h3><p>Proxy to a real service, capture the exchange, and turn any captured hit into an editable mock in one click.</p></div></div>
+  </div>
+</section>
+
+<section style="padding-block:20px 56px">
+  <p class="eyebrow">Built for</p>
+  <h2 style="margin-top:14px">The systems that are hard to get a test account for.</h2>
+  <div class="uses">
+    <div class="use"><small>Telecom</small><h3>SMS and charging</h3><p>Fake an SMSC with delivery receipts, or a Diameter credit-control server that approves and rejects on demand.</p></div>
+    <div class="use"><small>Integration</small><h3>Third-party APIs</h3><p>Replace a partner sandbox with a mock that returns the errors, delays and edge cases you cannot trigger for real.</p></div>
+    <div class="use"><small>Messaging</small><h3>Queues and brokers</h3><p>Exercise MQTT, Kafka and AMQP 1.0 (JMS) consumers without standing up a broker cluster.</p></div>
+    <div class="use"><small>CI</small><h3>Repeatable pipelines</h3><p>Load mocks from a file at the start of a build, run the suite, and read every hit in the log afterwards.</p></div>
+  </div>
+</section>
+
+<section id="one-tool" style="padding-block:20px 0">
+  <p class="eyebrow">One tool instead of six</p>
+  <h2 style="margin-top:14px">Stop stitching tools together.</h2>
+  <p class="lede">Testing a real integration usually means a mock server, an API client, a load tool, certificate scripts, a protocol simulator and a cron job. AirMock puts them behind one login.</p>
+  <div class="replace">
+    <div class="rp"><span class="was">a mock server</span><span class="arrow">→ in AirMock</span><h3>12 protocol mocks</h3><p>Rules, scenarios, weighted replies, validation and fault injection.</p></div>
+    <div class="rp"><span class="was">an API client</span><span class="arrow">→ in AirMock</span><h3>Collections and runner</h3><p>Environments, chained requests, code snippets and Postman or SoapUI import.</p></div>
+    <div class="rp"><span class="was">a load-testing tool</span><span class="arrow">→ in AirMock</span><h3>Load tester with history</h3><p>Percentiles per run, kept for comparison, with an offline HTML report.</p></div>
+    <div class="rp"><span class="was">openssl scripts</span><span class="arrow">→ in AirMock</span><h3>Certificate store</h3><p>Generate or import CAs and certs, then bind them to a mock with mTLS.</p></div>
+    <div class="rp"><span class="was">SMS and billing simulators</span><span class="arrow">→ in AirMock</span><h3>SMPP and Diameter</h3><p>Delivery receipts and credit-control answers from the same place as your REST mocks.</p></div>
+    <div class="rp"><span class="was">cron plus curl</span><span class="arrow">→ in AirMock</span><h3>Scheduled events</h3><p>Fire templated requests on an interval, with counters and CSV rows.</p></div>
+  </div>
+</section>
+
+<section id="orbit" style="padding-block:88px 0">
+  <p class="eyebrow">One core</p>
+  <h2 style="margin-top:14px">Twelve protocols orbit one engine.</h2>
+  <div class="orbitwrap">
+    <div>
+      <p class="lede" style="margin-top:0">Every protocol shares the same templates, rules, hit log, certificates and admin UI. Pick a node to jump to how that mock works.</p>
+      <p class="lede">The inner ring is HTTP-family, the middle ring is plain TCP-style protocols, and the outer ring is messaging and telecom.</p>
+    </div>
+    <div class="orbit" id="orbitEl"><span class="pulse-ring"></span><span class="pulse-ring"></span><div class="core"><svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><use href="#logo"/></svg></div></div>
+  </div>
+</section>
+
+<section id="protocols">
+  <p class="eyebrow">Protocols</p>
+  <h2 style="margin-top:14px">Pick the wire you need to fake.</h2>
+  <p class="lede">Each protocol runs a real server on its own port, so existing clients connect without code changes. Choose one to see how a mock is shaped.</p>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Protocols"></div>
+  <div class="explore">
+    <div class="meta"><h3 id="pName"></h3><p id="pDesc" style="color:var(--muted);font-size:.95rem"></p><dl id="pFacts"></dl></div>
+    <div class="wire"><div class="wire-bar"><span>try it</span><b id="pPort"></b></div><pre id="pCmd"></pre></div>
+  </div>
+</section>
+
+<section id="behaviour">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Response logic</p>
+      <h2 style="margin-top:14px">Behaves like the real thing.</h2>
+      <p class="lede">For REST, SOAP and GraphQL, AirMock walks this ladder on every request and answers at the first step that applies.</p>
+      <p class="lede">Bodies are Go templates with sprig, fake data, persisted counters and CSV rows, so a response can echo the request, count calls or rotate through test accounts.</p>
+    </div>
+    <ol class="ladder">
+      <li style="--i:0"><span class="n">1</span><div><b>Proxy / record-replay</b><span>Forward to a real upstream, capture the exchange, promote it to a mock.</span></div></li>
+      <li style="--i:1"><span class="n">2</span><div><b>Validation</b><span>Required, type, pattern, range and enum checks return a 400 before any logic runs.</span></div></li>
+      <li style="--i:2"><span class="n">3</span><div><b>Async callback</b><span>Acknowledge now, call back by webhook or email later, with retries.</span></div></li>
+      <li style="--i:3"><span class="n">4</span><div><b>Scenario</b><span>Step through pending, shipped, delivered across calls from the same client.</span></div></li>
+      <li style="--i:4"><span class="n">5</span><div><b>Weighted random</b><span>Return one of several responses by probability.</span></div></li>
+      <li style="--i:5"><span class="n">6</span><div><b>Conditional rules</b><span>Match on body, header, query or XPath. First match wins.</span></div></li>
+      <li style="--i:6"><span class="n">7</span><div><b>Static response</b><span>The fallback body, status, headers and delay.</span></div></li>
+    </ol>
+  </div>
+
+  <div class="play">
+    <div class="panel">
+      <h3>Try the ladder</h3>
+      <p class="sub">A simulated payment mock with two conditional rules and a fallback. Change the request and see which step answers.</p>
+      <label class="field">Request body: amount<input id="amt" type="number" value="250" min="0" step="1"></label>
+      <label class="field">Header: X-Region<select id="reg"><option value="EU">EU</option><option value="US">US</option></select></label>
+      <ol class="rules" id="rules">
+        <li data-r="1"><b>1</b> body.amount gt 1000 <i></i></li>
+        <li data-r="2"><b>2</b> header.X-Region equals US <i></i></li>
+        <li data-r="3"><b>3</b> static response <i></i></li>
+      </ol>
+    </div>
+    <div class="wire"><div class="wire-bar"><span>response</span><b id="pstat">200</b></div><pre id="pout" style="min-height:15em"></pre></div>
+  </div>
+  <div class="chaos">
+    <div class="panel">
+      <h3>Try fault injection</h3>
+      <p class="sub" style="color:var(--muted);font-size:.88rem;margin-top:4px">Set a mock's failure profile and see how 40 simulated calls would turn out. This runs in your browser, not on a real instance.</p>
+      <div class="sl"><div><label for="fe">Error rate</label><output id="feo">15%</output></div><input id="fe" type="range" min="0" max="100" value="15"></div>
+      <div class="sl"><div><label for="ft">Timeout rate</label><output id="fto">5%</output></div><input id="ft" type="range" min="0" max="100" value="5"></div>
+      <div class="sl"><div><label for="fj">Latency jitter</label><output id="fjo">200 ms</output></div><input id="fj" type="range" min="0" max="1000" step="50" value="200"></div>
+    </div>
+    <div class="panel">
+      <h3>40 calls</h3>
+      <div class="bars" id="bars" aria-hidden="true"></div>
+      <div class="legend"><span>ok</span><span class="e">error status</span><span class="t">timeout</span></div>
+      <p class="sum" id="fsum"></p>
+    </div>
+  </div>
+</section>
+
+
+<section id="features">
+  <p class="eyebrow">Features</p>
+  <h2 style="margin-top:14px">Everything in the box.</h2>
+  <div class="bento">
+    <div class="b s4 hl"><span class="k">MOCK ENGINE</span><h3>Realistic responses, on your terms</h3><p>Conditional rules, stateful scenarios, weighted random replies, request validation, templated bodies and per-response delay. Version history keeps every edit, with field-level diffs and one-click restore.</p><ul><li>response rules</li><li>scenarios</li><li>weighted</li><li>validation</li><li>templates</li><li>version history</li></ul></div>
+    <div class="b s2"><span class="k">FAULT INJECTION</span><h3>Break it on purpose</h3><p>Latency jitter, error rates and timeouts that drop the connection, per mock.</p></div>
+    <div class="b s2"><span class="k">PROJECTS</span><h3>Group and isolate</h3><p>Give a set of APIs its own base path, dedicated port and TLS settings.</p></div>
+    <div class="b s2"><span class="k">SESSIONS</span><h3>Connected clients</h3><p>List, disconnect and push messages to live TCP, WS, MQTT, SMPP and JMS sessions.</p></div>
+    <div class="b s2"><span class="k">ASYNC</span><h3>Callbacks</h3><p>Webhook or email callbacks with fixed or extracted targets, retry and backoff.</p></div>
+    <div class="b s3"><span class="k">API CLIENT</span><h3>Collections and environments</h3><p>Folders, variables, bearer, basic and API-key auth, multipart, response extraction, a collection runner, code snippets in curl, JS, Python and Go, and an mTLS client-certificate picker.</p><ul><li>Postman</li><li>SoapUI</li><li>WSDL</li><li>curl</li><li>workspaces</li></ul></div>
+    <div class="b s3"><span class="k">LOAD TESTER</span><h3>Percentiles, history, reports</h3><p>Up to 50 workers and 2000 requests for HTTP and WebSocket. Each run keeps p50 to p99, requests per second and error rate, with JSON, CSV and standalone HTML report downloads.</p></div>
+    <div class="b s2"><span class="k">CERTIFICATES</span><h3>TLS and mTLS store</h3><p>Generate or import PEM, DER and PKCS#12. Bind to the gateway, a project or a mock.</p></div>
+    <div class="b s2"><span class="k">IMPORT</span><h3>Scaffold from specs</h3><p>WSDL, GraphQL SDL, OpenAPI, HAR, Postman and SoapUI become working mocks.</p></div>
+    <div class="b s2"><span class="k">SCHEDULED EVENTS</span><h3>Fire on a timer</h3><p>Send outbound requests on an interval with templated bodies and CSV data.</p></div>
+    <div class="b s3"><span class="k">OBSERVABILITY</span><h3>One log for everything</h3><p>Inbound hits, proxy captures, client calls, callbacks and scheduled events in a filterable table with live tail, export and header redaction. A dashboard flags unused and error-prone mocks. Prometheus metrics at <code>/metrics</code>.</p></div>
+    <div class="b s3"><span class="k">SECURITY</span><h3>Admin login and workspace locks</h3><p>Optional PIN or password login with rolling sessions and brute-force lockout, plus per-workspace locks that protect collections, environments and mocks.</p></div>
+    <div class="b s3"><span class="k">MOCKS AS CODE</span><h3>Keep mocks in git</h3><p>Export, list and apply mocks and scheduled events from a file. Apply matches by name, so it is safe in CI.</p></div>
+    <div class="b s3"><span class="k">BACKUP</span><h3>Move or restore everything</h3><p>One JSON file holds mocks, certificates, collections, templates and events. Import merges without overwriting.</p></div>
+    <div class="b s2"><span class="k">UI</span><h3>Nine themes</h3><p>Four light and five dark themes with accents.</p></div>
+    <div class="b s2"><span class="k">PALETTE</span><h3>Ctrl/Cmd + K</h3><p>Jump to any mock, request or page.</p></div>
+    <div class="b s2"><span class="k">TLS TOOL</span><h3>Chain inspector</h3><p>Dial any host and see the chain, expiry and hostname checks.</p></div>
+  </div>
+  <div class="split" style="margin-top:56px">
+    <div>
+      <p class="eyebrow">Mocks as code</p>
+      <h2 style="margin-top:14px">Review mocks in pull requests.</h2>
+      <p class="lede">Export every mock to a file, commit it, and apply it from CI against any instance. <code>--dry-run</code> validates everything and saves nothing, <code>--atomic</code> applies nothing unless every mock passes, and an identical mock is reported as unchanged instead of rewritten.</p>
+    </div>
+    <div class="wire"><div class="wire-bar"><span>shell</span><b>idempotent</b></div>
+<pre><span class="c-dim"># dump the current instance</span>
+airmock mocks export -o mocks.yaml
+
+<span class="c-dim"># create or update from the file</span>
+airmock mocks apply -f mocks.yaml --dry-run
+airmock mocks apply -f mocks.yaml --atomic \
+  --url https://mocks.internal:8080 \
+  --password "$AIRMOCK_ADMIN_PASSWORD"
+<span class="c-dim">#   created   Get order
+#   unchanged Create payment
+#   updated   OCS granted units</span></pre></div>
+  </div>
+</section>
+
+<section id="themes">
+  <p class="eyebrow">Themes</p>
+  <h2 style="margin-top:14px">Nine themes. Pick one and this page changes too.</h2>
+  <p class="lede">AirMock ships four light and five dark themes, each with its own accent colours, switchable from the sidebar. Density can be comfortable or compact. Try them here.</p>
+  <div class="themes" id="themeGrid"></div>
+  <p class="tnote">Light: Daylight, Meadow, Rose, Cartoon. Dark: Midnight, Ocean, Sunset, Violet, Cocoa. Your choice is remembered in this browser.</p>
+</section>
+
+<section id="security">
+  <p class="eyebrow">Security</p>
+  <h2 style="margin-top:14px">Closed by default, open on purpose.</h2>
+  <p class="lede">The admin UI and API start on the loopback interface only, so a fresh install is not reachable from the network. Opening it up is one flag, and AirMock warns at startup if you do it with login off.</p>
+  <div class="unique">
+    <div class="u"><div class="ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><div><h3>Loopback by default</h3><p>The admin listener binds to <code>127.0.0.1</code>. Use <code>--admin-host 0.0.0.0</code> to reach it from other machines. The Linux package's service does, so check the startup log.</p></div></div>
+    <div class="u"><div class="ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div><div><h3>PIN or password login</h3><p>One shared credential with rolling sessions and a 60-second lockout after 5 wrong tries from an address. PINs are 4 to 6 digits; use a longer password if the port is reachable.</p></div></div>
+    <div class="u"><div class="ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></div><div><h3>Cross-site write protection</h3><p>A web page you visit cannot create or change mocks on a locally running instance, even with login off. Changes must come from AirMock's own page, or from curl and the CLI.</p></div></div>
+    <div class="u"><div class="ic"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M12 4l8 8-8 8"/></svg></div><div><h3>Guarded imports</h3><p>The import fetcher refuses loopback, link-local and cloud-metadata addresses on every connection and redirect, so it cannot be pointed at services on the AirMock host.</p></div></div>
+  </div>
+  <p class="lede">What it does not protect: the mock gateway and protocol ports (SMPP, Diameter, MQTT and the rest) have no authentication, by design, because the clients you are testing expect none. Keep them on a network you trust or firewall them to the machines that need them.</p>
+</section>
+
+<section id="install">
+  <p class="eyebrow">Install</p>
+  <h2 style="margin-top:14px">Running in a minute.</h2>
+  <p class="lede">State lives in an embedded SQLite file. Open <code>http://localhost:8080</code> for the admin UI. Mocks answer on <code>:8081</code>.</p>
+  <div class="installs">
+    <div class="wire"><div class="wire-bar"><span>Debian / Ubuntu</span><b>systemd service</b></div><pre>sudo dpkg -i airmock_*.deb
+systemctl status airmock</pre></div>
+    <div class="wire"><div class="wire-bar"><span>Fedora / RHEL</span><b>systemd service</b></div><pre>sudo rpm -i airmock_*.rpm
+systemctl status airmock</pre></div>
+    <div class="wire"><div class="wire-bar"><span>Linux or macOS</span><b>tarball</b></div><pre>tar xzf airmock_*.tar.gz
+./airmock serve</pre></div>
+    <div class="wire"><div class="wire-bar"><span>Windows</span><b>zip</b></div><pre>Expand-Archive airmock_*_windows_amd64.zip
+.\airmock.exe serve</pre></div>
+  </div>
+  <p class="lede">Check what you installed with <code>airmock --version</code> (it prints the version and commit). Upgrading a package never touches <code>/var/lib/airmock</code>. Packages and checksums are in <a href="#downloads">Downloads</a>.</p>
+</section>
+
+<section id="compat">
+  <p class="eyebrow">Compatibility</p>
+  <h2 style="margin-top:14px">What each protocol actually speaks.</h2>
+  <p class="lede">So "twelve protocols" is something you can check. This is taken from the code, including what is not supported.</p>
+  <div class="tblwrap"><table class="tbl">
+    <caption class="sr">Supported and unsupported features of each protocol, with TLS options</caption>
+    <thead><tr><th scope="col">Protocol</th><th scope="col">Supported</th><th scope="col">Not supported</th><th scope="col">TLS</th></tr></thead>
+    <tbody>
+    <tr><td>REST</td><td>Any method, path parameters, HEAD for GET mocks, CORS preflight, request bodies to 10 MB, gzip request bodies</td><td>Request bodies over 10 MB (413)</td><td>Gateway or per project, with mutual TLS</td></tr>
+    <tr><td>SOAP</td><td>SOAP 1.1, routing by SOAPAction or body element, WSDL and SoapUI import</td><td>SOAP 1.2 specific handling</td><td>As REST</td></tr>
+    <tr><td>GraphQL</td><td>POST with JSON, operation matching, inline arguments and variables, SDL import</td><td>Schema enforcement, subscriptions</td><td>As REST</td></tr>
+    <tr><td>WebSocket</td><td>Greeting, text frames, match by contains, exact or regex, server push</td><td>Binary reply frames</td><td>As REST</td></tr>
+    <tr><td>TCP</td><td>Banner, custom line delimiter, interactive or one-line login, idle timeout</td><td>Telnet option negotiation</td><td>Per mock, with mutual TLS</td></tr>
+    <tr><td>SMTP</td><td>EHLO, HELO, MAIL FROM, RCPT TO, DATA, RSET, NOOP, QUIT; refusal at sender, recipient or message stage</td><td>STARTTLS, AUTH, pipelining</td><td>Implicit TLS, with mutual TLS</td></tr>
+    <tr><td>MQTT</td><td>CONNECT, SUBSCRIBE, UNSUBSCRIBE, PUBLISH, PINGREQ, DISCONNECT; <code>+</code> and <code>#</code> topics; delivery at QoS 0</td><td>QoS 2, retained messages, persistent sessions, authentication</td><td>None</td></tr>
+    <tr><td>FTP</td><td>USER, PASS, SYST, TYPE, PWD, CWD, NOOP, QUIT, PASV, LIST, NLST, RETR, STOR</td><td>Active mode (PORT), directories</td><td>None</td></tr>
+    <tr><td>Kafka</td><td>Single node: ApiVersions v0 to 2, Metadata v0 to 8, Produce v0 to 8, Fetch v0 to 11, ListOffsets v1 to 5</td><td>Consumer groups, transactions, multiple partitions</td><td>None</td></tr>
+    <tr><td>SMPP</td><td>v3.4 SMSC: bind_transceiver, enquire_link, submit_sm, unbind; deliver_sm replies and pushes</td><td>bind_transmitter and receiver, submit_multi, query_sm, long messages</td><td>None</td></tr>
+    <tr><td>Diameter</td><td>CER/CEA, DWR/DWA, CCR to CCA. Reads Session-Id, Origin-Host and Realm, CC-Request-Type and Number, Subscription-Id-Data, and the MSCC Rating-Group and Service-Identifier. Answers with Result-Code and, per rule, MSCC with Granted-Service-Unit (CC-Total-Octets, CC-Time, CC-Service-Specific-Units), Validity-Time and Final-Unit-Indication</td><td>Other Diameter applications and commands (Gx, Rx, S6a and so on)</td><td>None</td></tr>
+    <tr><td>JMS (AMQP 1.0)</td><td>Open, Begin, Attach, Flow, Transfer, Disposition (accepted), Detach, End, Close. Match on address and payload</td><td>SASL, transactions, link resumption, queueing without credit</td><td>None</td></tr>
+    </tbody></table></div>
+</section>
+
+<section>
+  <p class="eyebrow">Know the limits</p>
+  <h2 style="margin-top:14px">What AirMock is not.</h2>
+  <ul class="limits">
+    <li>One shared admin credential. No user accounts, teams or API keys.</li>
+    <li>Self-hosted only. No hosted or shareable public-URL mode.</li>
+    <li>Kafka has no consumer groups. MQTT is QoS 0 with no retained messages.</li>
+    <li>Per-mock TLS is available for HTTP, TCP and SMTP only.</li>
+    <li>Sessions and cookie jars are in memory and reset on restart.</li>
+    <li>The mock gateway, protocol ports and <code>/metrics</code> have no authentication. Keep them on a trusted network or firewall them.</li>
+  </ul>
+</section>
+
+<section id="downloads">
+  <p class="eyebrow">Downloads</p>
+  <h2 style="margin-top:14px">Get the latest release from GitHub.</h2>
+  <p class="lede">This list is read live from the <a href="https://github.com/addictedabhi/AirMock/releases/latest" rel="noopener">latest GitHub release</a>, so it always shows the newest version. Verify a download against the SHA-256 below, or with <code>sha256sum -c checksums.txt</code>.</p>
+  <div class="dl-meta" id="dlmeta" aria-live="polite"></div>
+  <noscript><p class="lede">This list needs JavaScript. Without it, open the <a href="https://github.com/addictedabhi/AirMock/releases/latest" rel="noopener">latest release on GitHub</a>.</p></noscript>
+  <div class="tblwrap"><table class="tbl dl">
+    <caption class="sr">AirMock packages with platform, size and SHA-256 checksum</caption>
+    <thead><tr><th scope="col">Package</th><th scope="col">Platform</th><th scope="col">Size</th><th scope="col">SHA-256</th></tr></thead>
+    <tbody id="dlrows"><tr><td colspan="4">This table needs JavaScript. Use the <a href="https://github.com/addictedabhi/AirMock/releases/latest" rel="noopener">latest release on GitHub</a>.</td></tr></tbody>
+  </table></div>
+  <p class="lede" id="dllinks"><a href="https://github.com/addictedabhi/AirMock/releases" rel="noopener">All releases</a> · <a href="https://github.com/addictedabhi/AirMock/releases/latest" rel="noopener">Release notes</a></p>
+</section>
+
+<section id="changelog">
+  <p class="eyebrow">What's new</p>
+  <h2 style="margin-top:14px">Recent changes.</h2>
+  <ol class="cl">
+    <li><h3>v0.1.9</h3><ul>
+      <li>A locked-out login now says how long to wait and sends a <code>Retry-After</code> header, instead of "try again later"</li>
+      <li>The downloads folder has its own plain page, so the package list works without JavaScript</li>
+    </ul></li>
+    <li><h3>v0.1.8</h3><ul>
+      <li>PIN keypads submit at the PIN's real length, so 5 and 6 digit PINs work</li>
+      <li>The Mocks page no longer pushes <strong>New mock</strong> off-screen on laptop widths, and all nine themes apply before the page loads</li>
+      <li>Accessibility: labelled inputs and real expand buttons on list rows</li>
+      <li>Mocks created from a request are named after it, and <strong>New collection</strong> asks for a name</li>
+    </ul></li>
+    <li><h3>v0.1.7</h3><ul>
+      <li>Diameter answers can carry granted units, Validity-Time and Final-Unit-Indication, with matching on Subscription-Id and Rating-Group</li>
+      <li><code>airmock mocks apply</code> gains <code>--dry-run</code> and <code>--atomic</code> and reports unchanged mocks</li>
+      <li>The admin UI binds to loopback by default; cross-site writes and local-address imports are refused</li>
+      <li>SMPP destination matching: prefix, wildcard, regex and numeric range</li>
+      <li>GraphQL inline arguments; HEAD and CORS on the gateway; templates are checked when a mock is saved</li>
+      <li>SMTP refuses a bad sender or recipient at that command, not after the message body</li>
+      <li><code>airmock --version</code> reports the commit and build time</li>
+    </ul></li>
+  </ol>
+</section>
+
+<section id="open-source">
+  <p class="eyebrow">Open source</p>
+  <h2>Free, open and yours to change.</h2>
+  <p class="lede">AirMock is open source under the MIT licence. Read the code, build it yourself, run it anywhere and send changes back. There are no accounts, no licence keys and no telemetry.</p>
+  <div class="uses">
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><div><h3>MIT licensed</h3><p>Use it at work, in CI or in your own products, with no fees and no seat limits.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 8l-5 4 5 4M16 8l5 4-5 4M14 5l-4 14"/></svg></div><div><h3>Read the source</h3><p>One Go module and one Svelte UI. <a href="https://github.com/addictedabhi/AirMock" rel="noopener">Browse the code on GitHub</a>.</p></div></div>
+    <div class="u"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 8v8M18 11c0 4-6 3-12 5"/></svg></div><div><h3>Contribute</h3><p>Found a bug or need a protocol feature? <a href="https://github.com/addictedabhi/AirMock/issues" rel="noopener">Open an issue</a> or send a pull request.</p></div></div>
+  </div>
+</section>
+
+<section id="faq">
+  <p class="eyebrow">Questions</p>
+  <h2 style="margin-top:14px">Before you install.</h2>
+  <div class="faq">
+    <details><summary>Do I need a database or runtime?</summary><p>No. AirMock is a single Go binary with the web UI embedded. It stores everything in a SQLite file in its data directory.</p></details>
+    <details><summary>Which ports does it use?</summary><p>The admin UI and API use 8080. REST, SOAP, GraphQL and WebSocket mocks answer on 8081 by default, or on a dedicated port if you put them in a project. Every other protocol mock binds the port you give it. All are configurable.</p></details>
+    <details><summary>Can I run it in CI?</summary><p>Yes. Start it headless with <code>airmock serve --headless</code>, then load your mocks with <code>airmock mocks apply -f mocks.yaml</code>. Apply updates by name, so repeated runs are safe.</p></details>
+    <details><summary>Is it secure to leave running on a network?</summary><p>The admin UI and API listen on loopback only unless you pass <code>--admin-host</code>, and you can protect them with a PIN or password. Cross-site writes are refused and imports cannot reach local services. The mock gateway and protocol ports are unauthenticated, so firewall them to the machines that need them.</p></details>
+    <details><summary>Will my mocks survive a restart?</summary><p>Yes. Mocks, scenarios, counters, queued callbacks and the hit log persist. Live sessions, cookie jars and Kafka topic contents reset.</p></details>
+    <details><summary>Can I move my setup to another machine?</summary><p>Export a full backup as one JSON file, including certificates, collections and templates, then import it elsewhere. Imports merge and never overwrite.</p></details>
+    <details><summary>Which operating systems are supported?</summary><p>Linux packages (.deb, .rpm and tarball), Windows zip archives and macOS archives are built for amd64 and arm64. The Linux packages are the best tested.</p></details>
+  </div>
+</section>
+
+<div class="final">
+  <h2>Stop waiting. Start testing.</h2>
+  <p>Download AirMock, open the browser UI, and have your first mock answering in minutes.</p>
+  <a class="btn" href="#downloads">Go to downloads</a>
+</div>
+</main>
+
+<footer>
+  <a class="brand" href="#top"><svg aria-hidden="true" focusable="false"><use href="#logo"/></svg>AirMock</a>
+  <span>Open source, MIT licensed. <a href="https://github.com/addictedabhi/AirMock" rel="noopener">GitHub</a> · <a href="https://github.com/addictedabhi/AirMock/issues" rel="noopener">Report an issue</a> · <span id="ftver"></span></span>
+</footer>
+</div>
+
+<script>
+(function(){
+  var P=[
+   {id:'REST',port:':8081',desc:'Method and path routing with path parameters, validation, rules, scenarios and templated bodies.',facts:[['Match','method + path'],['Extras','proxy, async, fault injection'],['TLS','gateway or per project']],
+    cmd:'<span class="c-dim">$</span> curl -i localhost:8081/orders/42\n<span class="c-sig">HTTP/1.1 200 OK</span>\n{ "id": 42, "status": "shipped" }'},
+   {id:'SOAP',port:':8081',desc:'Routes by SOAPAction, then by the first element in the Body. Import a WSDL to get one mock per operation.',facts:[['Match','SOAPAction / operation'],['Import','WSDL, SoapUI project'],['No match','SOAP 1.1 Fault']],
+    cmd:'<span class="c-dim">$</span> curl -H \'SOAPAction: "GetQuote"\' \\\n    -d @req.xml localhost:8081/quotes\n<span class="c-sig">&lt;GetQuoteResponse&gt;…</span>'},
+   {id:'GraphQL',port:':8081',desc:'Matches on operation name. Rules can read variables, so one mock can answer different queries differently.',facts:[['Match','operationName'],['Import','SDL schema'],['Errors','HTTP 200 + errors[]']],
+    cmd:'<span class="c-dim">$</span> curl -d \'{"query":"{ user { name } }"}\' \\\n    localhost:8081/graphql\n<span class="c-sig">{"data":{"user":{"name":"Asha"}}}</span>'},
+   {id:'WebSocket',port:':8081',desc:'Sends a greeting on connect, then answers messages by contains, exact or regex match. Can close after a reply.',facts:[['Match','message text'],['Push','from Connected Sessions'],['Auth','validated on handshake']],
+    cmd:'<span class="c-dim">$</span> websocat ws://localhost:8081/chat\n<span class="c-sig">welcome</span>\nping\n<span class="c-sig">pong</span>'},
+   {id:'TCP',port:'own port',desc:'Line-based Telnet-style server with banner, custom line delimiter, an optional login gate and idle timeout.',facts:[['Login','interactive or one-line format'],['Replies','end with CRLF'],['TLS','optional, mTLS']],
+    cmd:'<span class="c-dim">$</span> telnet localhost 9000\n<span class="c-sig">Welcome to AirMock</span>\nPING\n<span class="c-sig">PONG</span>'},
+   {id:'SMTP',port:'own port',desc:'Receives mail and accepts or rejects by sender, recipient, subject or body. Every message lands in the hit log.',facts:[['Rules','from / to / subject / body'],['Reject','any 4xx / 5xx code'],['TLS','implicit only']],
+    cmd:'<span class="c-dim">$</span> swaks --to qa@example.com --server localhost:2525\n<span class="c-sig">250 OK</span>'},
+   {id:'MQTT',port:'own port',desc:'A small broker. A publish that matches a topic rule triggers a reply published to another topic.',facts:[['Topics','+ and # wildcards'],['QoS','0'],['Retained','not supported']],
+    cmd:'<span class="c-dim">$</span> mosquitto_pub -t sensors/1 -m \'{"t":21}\'\n<span class="c-dim">$</span> mosquitto_sub -t alerts/#\n<span class="c-sig">{"alert":false}</span>'},
+   {id:'FTP',port:'own port',desc:'Passive-mode server with a file list you define. Login is required before listing or transferring.',facts:[['Download','RETR serves your content'],['Upload','STOR logged, discarded'],['Mode','passive only']],
+    cmd:'<span class="c-dim">$</span> curl ftp://u:p@localhost:2121/report.csv\n<span class="c-sig">id,total\n1,99</span>'},
+   {id:'Kafka',port:'own port',desc:'A single-node broker. Produce to a topic and a rule can append a reply record to another topic.',facts:[['APIs','Produce, Fetch, Metadata, ListOffsets'],['Groups','not supported'],['State','in memory']],
+    cmd:'<span class="c-dim">$</span> kcat -b localhost:9092 -t orders -P\n<span class="c-dim">$</span> kcat -b localhost:9092 -t confirmations -C\n<span class="c-sig">{"ok":true}</span>'},
+   {id:'SMPP',port:'own port',desc:'An SMSC for testing SMS gateways. Binds with system ID and password, answers submit_sm, and can send delivery receipts.',facts:[['Bind','transceiver'],['Match','exact, prefix, wildcard, regex or numeric range, plus text'],['Push','deliver_sm to a session']],
+    cmd:'<span class="c-dim">bind_transceiver</span> → <span class="c-sig">OK</span>\n<span class="c-dim">submit_sm to 15551234</span> → <span class="c-sig">message_id 1a</span>\n<span class="c-dim">deliver_sm</span> ← <span class="c-sig">"DELIVRD"</span>'},
+   {id:'Diameter',port:'own port',desc:'Answers Credit-Control-Requests like an online charging system: a Result-Code, and per rule the granted units (Multiple-Services-Credit-Control with Granted-Service-Unit, Validity-Time and Final-Unit-Indication) for quota and re-authorization tests.',facts:[['Handshake','CER/CEA, DWR/DWA automatic'],['Match','request type, session, Subscription-Id, Rating-Group'],['Answer','Result-Code + MSCC grants'],['No rule matches','2001, or your default code']],
+    cmd:'<span class="c-dim">CCR initial, RG 100</span> → <span class="c-sig">CCA 2001  MSCC{RG 100, GSU 5242880 octets, valid 600s}</span>\n<span class="c-dim">CCR update, RG 100</span> → <span class="c-warn">CCA 2001  MSCC{GSU 0, Final-Unit TERMINATE}</span>'},
+   {id:'JMS',label:'JMS (AMQP 1.0)',port:'own port',desc:'The JMS mock speaks AMQP 1.0 on the wire, the open protocol most brokers (ActiveMQ, Artemis, Azure Service Bus) accept from JMS clients. It is not the Java JMS API. A message to an address can be answered on another address for consumers with credit.',facts:[['Wire','AMQP 1.0, no SASL'],['Match','address + payload'],['Queueing','none, replies need credit']],
+    cmd:'<span class="c-dim">send → queue/orders</span>\n<span class="c-dim">receive ← queue/confirm</span>\n<span class="c-sig">{"accepted":true}</span>'}
+  ];
+  var tabs=document.getElementById('tabs');
+  P.forEach(function(p,i){var b=document.createElement('button');b.type='button';b.className='tab';b.setAttribute('role','tab');b.textContent=p.label||p.id;b.onclick=function(){show(i)};tabs.appendChild(b)});
+  function show(i){
+    var p=P[i];
+    Array.prototype.forEach.call(tabs.children,function(b,j){b.setAttribute('aria-selected',j===i?'true':'false')});
+    document.getElementById('pName').textContent=p.label||p.id;
+    document.getElementById('pDesc').textContent=p.desc;
+    document.getElementById('pPort').textContent=p.port;
+    document.getElementById('pCmd').innerHTML=p.cmd.split('\n').map(function(l,k){return '<span class="tl" style="display:block;animation-delay:'+(k*0.18)+'s">'+(l||' ')+'</span>'}).join('')+'<span class="cursor"></span>';
+    var dl=document.getElementById('pFacts');dl.innerHTML='';
+    p.facts.forEach(function(f){var dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=f[0];dd.textContent=f[1];dl.appendChild(dt);dl.appendChild(dd)});
+  }
+  show(0);
+  P.forEach(function(p){p.label=p.label||p.id});
+  var tr=document.getElementById('track'),names=P.map(function(p){return p.label});
+  tr.innerHTML=names.concat(names).map(function(n){return '<span>'+n+'</span>'}).join('');
+
+  var T=[
+   ['daylight','Daylight','Light',['#0052CC','#0A78D4','#22D3EE'],'#F3F7FD','#0A1630'],
+   ['meadow','Meadow','Light',['#1E7A4C','#2E9E66','#7BDDA8'],'#F2F8F3','#10241A'],
+   ['rose','Rose','Light',['#B0236F','#D6408F','#FF8FBF'],'#FCF3F7','#2A1020'],
+   ['cartoon','Cartoon','Light',['#E63946','#7B2FF7','#2B6CFF'],'#FFF8E1','#1A1A2E'],
+   ['midnight','Midnight','Dark',['#0052CC','#3B82F6','#22D3EE'],'#060B17','#EAF1FC'],
+   ['ocean','Ocean','Dark',['#0E7C86','#14B8A6','#5EEAD4'],'#04141A','#E4F6F6'],
+   ['sunset','Sunset','Dark',['#DC2626','#F97316','#FBBF24'],'#160A0A','#FDEEE3'],
+   ['violet','Violet','Dark',['#5B21B6','#8B5CF6','#E879F9'],'#0D0818','#F1EAFE'],
+   ['cocoa','Cocoa','Dark',['#9A5B25','#C98A4B','#E8C38E'],'#14100D','#F5EBE0']
+  ];
+  var cur='';
+  function setSkin(id){
+    cur=id;var r=document.documentElement;
+    if(id){r.setAttribute('data-skin',id)}else{r.removeAttribute('data-skin')}
+    try{localStorage.setItem('airmock-site-skin',id||'system')}catch(e){}
+    var t=T.filter(function(x){return x[0]===id})[0];
+    document.getElementById('tname').textContent=t?t[1]:'System';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-skin-id]'),function(b){b.setAttribute('aria-pressed',b.getAttribute('data-skin-id')===id?'true':'false')});
+  }
+  function mk(cls,id){
+    var t=T.filter(function(x){return x[0]===id})[0],b=document.createElement('button');b.type='button';b.className=cls;b.setAttribute('data-skin-id',id);
+    if(cls==='theme'){
+      b.innerHTML='<div class="pv" style="background:'+t[4]+'"><i class="a" style="background:'+t[5]+'"></i><i class="b" style="background:'+t[5]+'"></i><i class="c" style="background:linear-gradient(120deg,'+t[3][0]+','+t[3][1]+','+t[3][2]+')"></i></div><b>'+t[1]+'</b><small>'+t[2]+'</small><div class="dots">'+t[3].map(function(c){return '<span style="background:'+c+'"></span>'}).join('')+'</div>';
+    }else{
+      b.className='theme';b.style.padding='8px';b.innerHTML='<div class="pv" style="height:40px;background:'+t[4]+'"><i class="c" style="width:60%;height:10px;margin-top:auto;background:linear-gradient(120deg,'+t[3][0]+','+t[3][1]+','+t[3][2]+')"></i></div><small style="display:block;margin-top:6px;font-weight:600">'+t[1]+'</small>';
+    }
+    b.onclick=function(){setSkin(id);document.getElementById('tpop').classList.remove('open')};
+    return b;
+  }
+  var g=document.getElementById('themeGrid'),sw=document.getElementById('tsw');
+  T.forEach(function(t){g.appendChild(mk('theme',t[0]));sw.appendChild(mk('mini',t[0]))});
+  var sys=document.createElement('button');sys.type='button';sys.className='themebtn';sys.style.cssText='grid-column:1/-1;justify-content:center;margin-top:4px';sys.textContent='Follow system';sys.onclick=function(){setSkin('');document.getElementById('tpop').classList.remove('open')};sw.appendChild(sys);
+  var tb=document.getElementById('tbtn'),tp=document.getElementById('tpop');
+  tb.onclick=function(e){e.stopPropagation();var o=tp.classList.toggle('open');tb.setAttribute('aria-expanded',o)};
+  document.addEventListener('click',function(e){if(!tp.contains(e.target))tp.classList.remove('open')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')tp.classList.remove('open')});
+  var saved=null;try{saved=localStorage.getItem('airmock-site-skin')}catch(e){}
+  setSkin(saved===null?'midnight':(saved==='system'?'':saved));
+
+  (function(){
+    var a=document.getElementById('amt'),r=document.getElementById('reg'),out=document.getElementById('pout'),st=document.getElementById('pstat'),lis=document.querySelectorAll('#rules li');
+    function run(){
+      var amt=parseFloat(a.value)||0,reg=r.value,hit=amt>1000?1:(reg==='US'?2:3),code,body;
+      if(hit===1){code=402;body='{\n  "status": "declined",\n  "reason": "limit_exceeded",\n  "amount": '+amt+'\n}'}
+      else if(hit===2){code=200;body='{\n  "status": "approved",\n  "region": "US",\n  "amount": '+amt+',\n  "tax": '+(Math.round(amt*8)/100)+'\n}'}
+      else{code=200;body='{\n  "status": "approved",\n  "region": "EU",\n  "amount": '+amt+'\n}'}
+      st.textContent=code+' · rule '+hit;
+      out.innerHTML='<span class="c-dim">&gt; POST /payments  X-Region: '+reg+'\n&gt; {"amount": '+amt+'}</span>\n\n<span class="'+(code===200?'c-sig':'c-warn')+'">&lt; '+code+'</span>\n'+body.replace(/</g,'&lt;');
+      Array.prototype.forEach.call(lis,function(li,i){var n=i+1;li.className=n===hit?'hit':(n>hit?'skip':'');li.querySelector('i').textContent=n===hit?'MATCHED':(n>hit?'NOT REACHED':'NO MATCH')});
+    }
+    a.oninput=run;r.onchange=run;run();
+  })();
+
+  (function(){
+    var prog=document.getElementById('prog'),links=document.querySelectorAll('.links a[href^="#"]:not(.btn)');
+    function onScroll(){var h=document.documentElement,m=h.scrollHeight-h.clientHeight;prog.style.transform='scaleX('+(m>0?Math.min(1,h.scrollTop/m):0)+')'}
+    addEventListener('scroll',onScroll,{passive:true});onScroll();
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){Array.prototype.forEach.call(links,function(a){a.classList.toggle('act',a.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'-40% 0px -55% 0px'});
+      Array.prototype.forEach.call(links,function(a){var t=document.querySelector(a.getAttribute('href'));if(t)io.observe(t)});
+    }
+  })();
+
+  (function(){
+    var e=document.getElementById('fe'),t=document.getElementById('ft'),j=document.getElementById('fj'),bars=document.getElementById('bars'),sum=document.getElementById('fsum');
+    var seed=[];for(var k=0;k<40;k++){seed.push([((k*7919+13)%97)/97,((k*104729+7)%89)/89,((k*1299709+3)%83)/83])}
+    for(var k=0;k<40;k++){bars.appendChild(document.createElement('i'))}
+    function run(){
+      var er=+e.value,tr=+t.value,jt=+j.value,ok=0,er_=0,to=0;
+      document.getElementById('feo').textContent=er+'%';document.getElementById('fto').textContent=tr+'%';document.getElementById('fjo').textContent=jt+' ms';
+      Array.prototype.forEach.call(bars.children,function(b,i){
+        var s=seed[i],cls='',h;
+        if(s[0]*100<tr){cls='t';h=100}else if(s[1]*100<er){cls='e';h=18+s[2]*10}else{h=14+s[2]*(jt/1000)*80+8}
+        if(cls==='t')to++;else if(cls==='e')er_++;else ok++;
+        b.className=cls;b.style.height=Math.min(100,h)+'%';
+      });
+      sum.textContent=ok+' ok · '+er_+' errors · '+to+' timeouts';
+    }
+    [e,t,j].forEach(function(x){x.oninput=run});run();
+  })();
+
+  (function(){
+    var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // pointer spotlight on cards
+    Array.prototype.forEach.call(document.querySelectorAll('.b,.u,.rp,.use,.step'),function(c){
+      c.classList.add('spot');
+      c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')});
+    });
+    if(rm)return;
+    // count-up for stats and hero KPIs
+    function count(el){
+      var raw=el.textContent,m=raw.match(/^(\d+)(.*)$/);if(!m)return;
+      var end=+m[1],suf=m[2],t0=null;
+      function f(t){if(!t0)t0=t;var k=Math.min(1,(t-t0)/1100),v=Math.round(end*(1-Math.pow(1-k,3)));el.textContent=v+suf;if(k<1)requestAnimationFrame(f)}
+      el.textContent='0'+suf;requestAnimationFrame(f);
+    }
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){count(e.target);io.unobserve(e.target)}})},{threshold:.6});
+      Array.prototype.forEach.call(document.querySelectorAll('.stat b,.kpi b'),function(b){io.observe(b)});
+    }
+    // ladder: walk through the steps until the visitor hovers it
+    var lis=document.querySelectorAll('.ladder li'),i=0,paused=false,lad=document.querySelector('.ladder');
+    if(lad){
+      lad.addEventListener('pointerenter',function(){paused=true;Array.prototype.forEach.call(lis,function(l){l.classList.remove('cur')})});
+      lad.addEventListener('pointerleave',function(){paused=false});
+      setInterval(function(){if(paused)return;Array.prototype.forEach.call(lis,function(l,j){l.classList.toggle('cur',j===i)});i=(i+1)%lis.length},1700);
+    }
+  })();
+
+  // ---- orbit
+  (function(){
+    var rm0=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var o=document.getElementById('orbitEl'),rings=[['r1',['REST','SOAP','GraphQL','WebSocket']],['r2',['TCP','SMTP','FTP','MQTT']],['r3',['Kafka','SMPP','Diameter','JMS']]];
+    rings.forEach(function(r,ri){
+      var el=document.createElement('div');el.className='ring '+r[0];var cm=document.createElement('span');cm.className='comet';el.appendChild(cm);
+      r[1].forEach(function(n,k){
+        var a=(k/r[1].length)*Math.PI*2+ri*0.55,x=50+50*Math.cos(a),y=50+50*Math.sin(a);
+        var d=document.createElement('div');d.className='nd';d.style.left=x+'%';d.style.top=y+'%';
+        var i=document.createElement('i'),b=document.createElement('button');b.type='button';b.textContent=(P.filter(function(x){return x.id===n})[0]||{}).label||n;
+        var info=P.filter(function(x){return x.id===n})[0];if(info)b.setAttribute('data-tip',(info.label||info.id)+': '+info.desc.split('. ')[0].replace(/\.$/,'')+'. Click to open.');
+        b.onclick=function(){var idx=P.map(function(p){return p.id}).indexOf(n);if(idx<0)return;show(idx);var ex=document.querySelector('.explore');document.getElementById('tabs').scrollIntoView({behavior:rm0?'auto':'smooth',block:'center'});if(ex){ex.classList.remove('flash');void ex.offsetWidth;ex.classList.add('flash')}};
+        i.appendChild(b);d.appendChild(i);el.appendChild(d);
+      });
+      o.appendChild(el);
+    });
+  })();
+  // ---- particle network
+  (function(){
+    var c=document.getElementById('net');if(!c||!c.getContext)return;
+    var x=c.getContext('2d'),W=0,H=0,N=[],mx=-999,my=-999,rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches,vis=true,col='34,211,238',tick=0;
+    function size(){var r=c.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);
+      var n=Math.round(Math.min(70,Math.max(24,W*H/20000)));N=[];for(var i=0;i<n;i++)N.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28})}
+    function readCol(){var v=getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim();var m=/^#([0-9a-f]{6})$/i.exec(v);if(m){var h=m[1];col=parseInt(h.slice(0,2),16)+','+parseInt(h.slice(2,4),16)+','+parseInt(h.slice(4,6),16)}}
+    function frame(){
+      if(!vis){requestAnimationFrame(frame);return}
+      if(tick++%90===0)readCol();
+      x.clearRect(0,0,W,H);
+      for(var i=0;i<N.length;i++){var p=N[i];
+        if(!rm){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1}
+        var dm=Math.hypot(p.x-mx,p.y-my);
+        x.beginPath();x.arc(p.x,p.y,dm<140?2.4:1.5,0,6.283);x.fillStyle='rgba('+col+','+(dm<140?.95:.55)+')';x.fill();
+        for(var j=i+1;j<N.length;j++){var q=N[j],d=Math.hypot(p.x-q.x,p.y-q.y);
+          if(d<130){x.strokeStyle='rgba('+col+','+(.22*(1-d/130))+')';x.lineWidth=1;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke()}}
+        if(dm<170){x.strokeStyle='rgba('+col+','+(.5*(1-dm/170))+')';x.beginPath();x.moveTo(p.x,p.y);x.lineTo(mx,my);x.stroke()}
+      }
+      if(!rm)requestAnimationFrame(frame);
+    }
+    size();addEventListener('resize',function(){size()});
+    document.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top});
+    if('IntersectionObserver' in window)new IntersectionObserver(function(es){vis=es[0].isIntersecting}).observe(c);
+    frame();
+  })();
+  // ---- hero tilt + boot typing
+  (function(){
+    var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;if(rm)return;
+    var w=document.querySelector('.appwin'),hr=document.querySelector('.hero-r');
+    if(w&&hr&&matchMedia('(hover:hover)').matches){
+      hr.addEventListener('pointermove',function(e){var r=hr.getBoundingClientRect(),px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;w.style.setProperty('--ry',(px*14)+'deg');w.style.setProperty('--rx',(-py*10)+'deg')});
+      hr.addEventListener('pointerleave',function(){w.style.removeProperty('--ry');w.style.removeProperty('--rx')});
+    }
+    var b=document.getElementById('bootlog');if(!b)return;
+    var full=b.innerHTML,lines=full.split('\n'),i=0;b.innerHTML='';
+    function next(){if(i>=lines.length){return}b.innerHTML=lines.slice(0,i+1).join('\n')+(i<lines.length-1?'<span class="cursor"></span>':'');i++;setTimeout(next,i===1?650:480)}
+    setTimeout(next,500);
+  })();
+  // ---- screenshot gallery + lightbox
+  (function(){
+    var S=[
+     ['dashboard','Dashboard','Traffic, error rate and latency over the last 30 minutes, the busiest mocks, and what needs attention.','Midnight theme'],
+     ['mock-detail','Mock detail','A ready-made curl command, a one-click test request, version history with restore, and the mock\'s own request log.','Daylight theme'],
+     ['diameter-editor','Diameter charging rules','Granted units, Validity-Time, Final-Unit-Indication and a default Result-Code, matched on request type, rating group and subscription.','Ocean theme'],
+     ['collections-request','API client','Send a request from a collection, chain values between requests, and turn any request into a mock.','Meadow theme'],
+     ['load-test','Load testing','Percentiles, a status breakdown and a latency histogram for every run, with the history kept for comparison.','Violet theme'],
+     ['log-history','Log history','Every inbound hit, proxy capture, client call, callback and scheduled event in one filterable log.','Sunset theme'],
+     ['certificates','Certificates','Generate or import CAs and certificates, and see what uses each one before you delete it.','Cocoa theme'],
+     ['settings','Settings','Appearance, login, retention, redaction and browser access in one place.','Rose theme'],
+     ['mocks-list','Mocks list','Import from WSDL, OpenAPI, GraphQL, HAR and more, then manage every mock in bulk.','Cartoon theme']
+    ];
+    var root=document.getElementById('gallery');if(!root)return;
+    var slidesEl=document.getElementById('gSlides'),thumbsEl=document.getElementById('gThumbs'),bar=document.getElementById('gBar'),stage=document.getElementById('gStage');
+    var lb=document.getElementById('lb'),lbImg=document.getElementById('lbImg'),lbCap=document.getElementById('lbCap'),opener=null;
+    var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var cur=0,hover=false,focusIn=false,inView=false,lbOpen=false;
+    root.style.setProperty('--gdur','6.5s');
+    var slides=[],thumbs=[];
+    S.forEach(function(x,i){
+      var f=document.createElement('figure');f.className='g-slide';
+      var img=new Image();img.src='shots/'+x[0]+'.webp';img.width=1600;img.height=900;img.alt=x[1]+': '+x[2];img.decoding='async';if(i>0)img.loading='lazy';
+      f.appendChild(img);slidesEl.appendChild(f);slides.push(f);
+      var t=document.createElement('button');t.type='button';t.className='g-thumb';t.setAttribute('aria-label','Show '+x[1]+' ('+x[3]+')');
+      var ti=new Image();ti.src='shots/'+x[0]+'-thumb.webp';ti.alt='';ti.width=320;ti.height=180;ti.loading='lazy';
+      var sp=document.createElement('span');sp.textContent=x[1];var th=document.createElement('em');th.textContent=x[3].replace(' theme','');var nb=document.createElement('b');nb.textContent=String(i+1).padStart(2,'0');t.appendChild(ti);t.appendChild(nb);t.appendChild(sp);t.appendChild(th);
+      t.onclick=function(){select(i)};thumbsEl.appendChild(t);thumbs.push(t);
+    });
+    function restartBar(){bar.classList.remove('run');void bar.offsetWidth;if(!rm)bar.classList.add('run')}
+    function select(i){
+      cur=(i+S.length)%S.length;
+      slides.forEach(function(f,j){f.classList.toggle('on',j===cur);f.setAttribute('aria-hidden',j===cur?'false':'true')});
+      thumbs.forEach(function(t,j){t.setAttribute('aria-current',j===cur?'true':'false')});
+      var cap=document.querySelector('.g-cap'),h=document.getElementById('gTitle'),d=document.getElementById('gDesc');
+      var n=h.cloneNode(false),m=d.cloneNode(false);n.textContent=S[cur][1];m.textContent=S[cur][2];h.parentNode.replaceChild(n,h);d.parentNode.replaceChild(m,d);
+      document.getElementById('gTheme').textContent=S[cur][3];
+      var th=thumbs[cur];if(th&&th.scrollIntoView&&thumbsEl.scrollWidth>thumbsEl.clientWidth){thumbsEl.scrollTo({left:th.offsetLeft-thumbsEl.clientWidth/2+th.clientWidth/2,behavior:rm?'auto':'smooth'})}
+      restartBar();
+      if(lbOpen)fillLb();
+    }
+    function sync(){root.classList.toggle('paused',hover||focusIn||lbOpen||!inView||document.hidden)}
+    bar.addEventListener('animationend',function(){select(cur+1)});
+    stage.addEventListener('pointerenter',function(){hover=true;sync()});stage.addEventListener('pointerleave',function(){hover=false;sync()});
+    thumbsEl.addEventListener('pointerenter',function(){hover=true;sync()});thumbsEl.addEventListener('pointerleave',function(){hover=false;sync()});
+    root.addEventListener('focusin',function(){focusIn=true;sync()});root.addEventListener('focusout',function(){focusIn=false;sync()});
+    document.addEventListener('visibilitychange',sync);
+    if('IntersectionObserver' in window){new IntersectionObserver(function(es){inView=es[0].isIntersecting;sync()},{threshold:.35}).observe(stage)}else{inView=true}
+    document.getElementById('gPrev').onclick=function(){select(cur-1)};document.getElementById('gNext').onclick=function(){select(cur+1)};
+    root.addEventListener('keydown',function(e){if(e.key==='ArrowLeft'){select(cur-1)}else if(e.key==='ArrowRight'){select(cur+1)}});
+    // swipe on touch screens
+    var sx=null;stage.addEventListener('pointerdown',function(e){if(e.pointerType==='touch')sx=e.clientX});
+    stage.addEventListener('pointerup',function(e){if(sx!==null){var dx=e.clientX-sx;sx=null;if(Math.abs(dx)>45){select(cur+(dx<0?1:-1));e.preventDefault()}}});
+    // full-size viewer
+    function fillLb(){lbImg.src='shots/'+S[cur][0]+'.webp';lbImg.alt=S[cur][1]+': '+S[cur][2];lbCap.textContent=S[cur][1]+' · '+S[cur][3]+'  ('+(cur+1)+' of '+S.length+')'}
+    function openLb(){opener=document.activeElement;lbOpen=true;fillLb();lb.classList.remove('zoom');lb.hidden=false;document.documentElement.style.overflow='hidden';requestAnimationFrame(function(){lb.classList.add('open')});document.addEventListener('keydown',lbKeys);document.getElementById('lbX').focus();sync()}
+    function closeLb(){if(!lbOpen)return;document.removeEventListener('keydown',lbKeys);lbOpen=false;lb.classList.remove('open');setTimeout(function(){lb.hidden=true},rm?0:260);document.documentElement.style.overflow='';if(opener&&opener.focus)opener.focus();sync()}
+    document.getElementById('gOpen').onclick=openLb;
+    document.getElementById('lbX').onclick=closeLb;document.getElementById('lbBg').onclick=closeLb;
+    document.getElementById('lbPrev').onclick=function(){select(cur-1)};document.getElementById('lbNext').onclick=function(){select(cur+1)};
+    lbImg.onclick=function(){lb.classList.toggle('zoom')};
+    // Listen on the document while the viewer is open, so Esc and the arrow keys work wherever focus is
+    // (clicking the image leaves focus on the page, not on a button).
+    function lbKeys(e){
+      if(e.key==='Escape'){closeLb()}else if(e.key==='ArrowLeft'){select(cur-1)}else if(e.key==='ArrowRight'){select(cur+1)}
+      else if(e.key==='Tab'){var f=[document.getElementById('lbX'),document.getElementById('lbPrev'),document.getElementById('lbNext')].filter(function(x){return x.offsetParent!==null});var i=f.indexOf(document.activeElement);if(i<0){f[0].focus();e.preventDefault()}else if(e.shiftKey&&i===0){f[f.length-1].focus();e.preventDefault()}else if(!e.shiftKey&&i===f.length-1){f[0].focus();e.preventDefault()}}
+    }
+    select(0);
+  })();
+
+  // Copy: the async clipboard API only exists on https:// and localhost pages, so on a plain-http
+  // intranet address fall back to a hidden textarea and execCommand('copy'); if even that is
+  // refused, select the text and tell the visitor to press Ctrl+C.
+  document.getElementById('copyQs').onclick=function(){
+    var b=this,node=document.getElementById('qs'),t=node.textContent,timer=null;
+    function flash(msg){b.textContent=msg;clearTimeout(timer);timer=setTimeout(function(){b.textContent='Copy'},2200)}
+    function selectIt(){var r=document.createRange();r.selectNodeContents(node);var s=getSelection();s.removeAllRanges();s.addRange(r)}
+    function legacy(){
+      var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);
+      var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+      document.body.removeChild(ta);
+      if(ok){flash('Copied')}else{selectIt();flash('Press Ctrl+C')}
+    }
+    if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(function(){flash('Copied')},legacy)}else{legacy()}
+  };
+
+  // Downloads: read live from the latest GitHub release; falls back to a self-hosted downloads/manifest.json, then to a plain link.
+  (function(){
+    var REPO='addictedabhi/AirMock',meta=document.getElementById('dlmeta'),rows=document.getElementById('dlrows'),links=document.getElementById('dllinks');
+    meta.textContent='Loading the package list…';rows.innerHTML='<tr><td colspan="4">Loading the package list…</td></tr>';
+    function size(n){return n>1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB'}
+    function plat(f){var o={linux:'Linux',darwin:'macOS',windows:'Windows'}[f.os]||f.os||'Any',a={amd64:'x86-64',arm64:'ARM64'}[f.arch]||f.arch,k={deb:'.deb package',rpm:'.rpm package',tarball:'archive',zip:'zip archive',installer:'installer'}[f.kind]||f.kind;return [o,a].filter(Boolean).join(' ')+(k?', '+k:'')}
+    function cell(txt,cls){var td=document.createElement('td');if(cls)td.className=cls;td.textContent=txt;return td}
+    function guess(name){
+      var n=name.toLowerCase(),f={name:name};
+      f.os=/windows|\.exe$|\.msi$/.test(n)?'windows':/darwin|macos|\.dmg$/.test(n)?'darwin':/linux|\.deb$|\.rpm$/.test(n)?'linux':'';
+      f.arch=/arm64|aarch64/.test(n)?'arm64':/amd64|x86_64|x64/.test(n)?'amd64':'';
+      f.kind=/\.deb$/.test(n)?'deb':/\.rpm$/.test(n)?'rpm':/\.zip$/.test(n)?'zip':/\.(tar\.gz|tgz)$/.test(n)?'tarball':/\.(exe|msi|dmg)$/.test(n)?'installer':'';
+      return f;
+    }
+    function render(parts,files){
+      meta.textContent='';parts.filter(function(x){return x[1]}).forEach(function(x){var s=document.createElement('span');s.textContent=x[0]+' ';var b=document.createElement('b');b.textContent=x[1];s.appendChild(b);meta.appendChild(s)});
+      rows.textContent='';
+      files.forEach(function(f){
+        var tr=document.createElement('tr'),td=document.createElement('td'),a=document.createElement('a');
+        a.href=f.url;a.rel='noopener';a.textContent=f.name;td.appendChild(a);tr.appendChild(td);
+        tr.appendChild(cell(plat(f)));tr.appendChild(cell(size(f.size)));tr.appendChild(cell(f.sha256||'See checksums.txt','hash'));rows.appendChild(tr);
+      });
+    }
+    function setVer(v){var ft=document.getElementById('ftver');if(ft&&v)ft.textContent='Version '+v+'.'}
+    function fail(){
+      meta.textContent='The package list could not be loaded right now.';rows.textContent='';
+      var tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.innerHTML='Open the <a href="https://github.com/'+REPO+'/releases/latest" rel="noopener">latest release on GitHub</a> to download AirMock.';tr.appendChild(td);rows.appendChild(tr);
+    }
+    function local(){
+      return fetch('downloads/manifest.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(m){
+        render([['Version',m.version],['Commit',m.commit],['Built',(m.date||'').slice(0,10)]],(m.files||[]).map(function(f){f.url='downloads/'+encodeURIComponent(f.name);return f}));
+        if(links)links.innerHTML+=' · <a href="downloads/checksums.txt">checksums.txt</a>';setVer(m.version);
+      });
+    }
+    fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'}}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(rel){
+      var skip=/(checksums?|sha256sums?)(\.txt)?$|\.sig$|\.pem$|\.sbom|\.json$|source code/i,sums=null,files=[];
+      (rel.assets||[]).forEach(function(a){
+        if(/checksums?\.txt$/i.test(a.name)){sums=a.browser_download_url;return}
+        if(skip.test(a.name))return;
+        var f=guess(a.name);f.url=a.browser_download_url;f.size=a.size;f.sha256=(a.digest||'').replace(/^sha256:/,'');files.push(f);
+      });
+      if(!files.length)throw new Error('no assets');
+      render([['Version',rel.tag_name],['Released',(rel.published_at||'').slice(0,10)]],files);
+      if(sums&&links)links.innerHTML+=' · <a href="'+sums+'" rel="noopener">checksums.txt</a>';
+      setVer(rel.tag_name);
+    }).catch(function(){local().catch(fail)});
+  })();
+})();
+  // ---- futuristic layer: scroll reveal, tilt, magnetic buttons, cursor glow
+  (function(){
+    var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(rm||!('IntersectionObserver' in window))return;
+    var de=document.documentElement;de.classList.add('js-rv');
+    var sel='section>h2,section>.lede,.stat,.u,.meta,.b,.theme,.how>*,.play>*,.orbitwrap>*,.shots>*,.uses>*,.replace>*,.chaos>*,.unique>*,details,.dl,.cl,.g-wrap,.final>*';
+    var els=document.querySelectorAll(sel),io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){(e.target.__h||e.target).classList.add('in');io.unobserve(e.target)}})},{threshold:.1,rootMargin:'0px 0px -8% 0px'});
+    Array.prototype.forEach.call(els,function(el){
+      if(el.closest('.hero')||el.closest('header'))return;
+      var sibs=el.parentNode?Array.prototype.indexOf.call(el.parentNode.children,el):0;
+      el.style.setProperty('--d',Math.min(sibs,8)*70+'ms');el.classList.add('rv');if(el.parentNode&&el.parentNode.children.length>1&&!el.matches('h2,.lede,details')&&getComputedStyle(el.parentNode).display.indexOf('grid')>-1)el.classList.add(sibs%2?'from-r':'from-l');if(el.tagName==='H2'){el.__s=1;var sn=document.createElement('i');sn.setAttribute('aria-hidden','true');sn.style.cssText='display:block;height:1px;margin:0 0 -1px';sn.__h=el;el.parentNode.insertBefore(sn,el);io.observe(sn)}else io.observe(el);
+    });
+    // safety net: never leave content hidden if the observer misses something
+    setTimeout(function(){Array.prototype.forEach.call(document.querySelectorAll('.rv:not(.in)'),function(el){var r=el.getBoundingClientRect();if(r.top<innerHeight)el.classList.add('in')})},2500);
+    if(!matchMedia('(hover:hover)').matches)return;
+    // soft cursor glow
+    var g=document.createElement('div');g.id='cglow';g.setAttribute('aria-hidden','true');document.body.appendChild(g);
+    var gx=0,gy=0,tx=0,ty=0,raf=0;
+    function loop(){gx+=(tx-gx)*.14;gy+=(ty-gy)*.14;g.style.transform='translate('+gx+'px,'+gy+'px)';raf=(Math.abs(tx-gx)+Math.abs(ty-gy)>.5)?requestAnimationFrame(loop):0}
+    addEventListener('pointermove',function(e){tx=e.clientX;ty=e.clientY;g.classList.add('on');if(!raf)raf=requestAnimationFrame(loop)},{passive:true});
+    document.addEventListener('pointerleave',function(){g.classList.remove('on')});
+    // gentle 3D tilt on cards
+    Array.prototype.forEach.call(document.querySelectorAll('.b,.u,.stat,.meta'),function(c){
+      c.addEventListener('pointermove',function(e){var r=c.getBoundingClientRect(),px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;c.classList.add('tilt');c.style.setProperty('--ty',(px*6)+'deg');c.style.setProperty('--tx',(-py*6)+'deg')});
+      c.addEventListener('pointerleave',function(){c.classList.remove('tilt');c.style.removeProperty('--tx');c.style.removeProperty('--ty')});
+    });
+    // magnetic primary buttons
+    Array.prototype.forEach.call(document.querySelectorAll('.hero .btn,.final .btn'),function(b){
+      b.addEventListener('pointermove',function(e){var r=b.getBoundingClientRect();b.style.translate=((e.clientX-r.left-r.width/2)*.18)+'px '+((e.clientY-r.top-r.height/2)*.28)+'px'});
+      b.addEventListener('pointerleave',function(){b.style.translate=''});
+    });
+    // parallax drift on the hero logo mark and the aurora while scrolling
+    var bm=document.querySelector('.badge-mark'),au=document.querySelector('.aurora'),tick=false;
+    addEventListener('scroll',function(){if(tick)return;tick=true;requestAnimationFrame(function(){var y=scrollY;if(au)au.style.transform='translateY('+(y*.12)+'px)';tick=false})},{passive:true});
+  })();
+  // ---- screenshot card strip: scroll by moving the mouse left/right over it
+  (function(){
+    var el=document.getElementById('gThumbs');if(!el)return;
+    var rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var v=0,raf=0;
+    function step(){if(!v){raf=0;return}el.scrollLeft+=v;raf=requestAnimationFrame(step)}
+    el.addEventListener('pointermove',function(e){
+      if(e.pointerType!=='mouse')return;
+      var r=el.getBoundingClientRect(),p=(e.clientX-r.left)/r.width*2-1; // -1 .. 1
+      var dead=.18,a=Math.abs(p)<dead?0:(Math.abs(p)-dead)/(1-dead);
+      v=Math.sign(p)*Math.pow(a,1.6)*(rm?4:16);
+      if(v&&!raf)raf=requestAnimationFrame(step);
+    });
+    el.addEventListener('pointerleave',function(){v=0});
+    // keep the selected card centred whenever the slide changes
+    new MutationObserver(function(ms){ms.forEach(function(m){var t=m.target;if(t.getAttribute('aria-current')==='true'&&!el.matches(':hover')){el.scrollTo({left:t.offsetLeft-(el.clientWidth-t.offsetWidth)/2,behavior:rm?'auto':'smooth'})}})}).observe(el,{attributes:true,attributeFilter:['aria-current'],subtree:true});
+  })();
+</script>
+
+</body>
+</html>

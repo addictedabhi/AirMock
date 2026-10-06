@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AirMock
+Comment=Cross-protocol API mocking tool
+Exec=/usr/bin/airmock-app
+Icon=/usr/share/pixmaps/airmock.svg
+Terminal=false
+Categories=Development;Utility;
+StartupWMClass=AirMock

@@ -1,0 +1,110 @@
+version: 2
+
+project_name: airmock
+
+before:
+  hooks:
+    - sh -c "cd ui && npm ci && npm run build"
+
+builds:
+  - id: airmock-unix
+    main: ./cmd/airmock
+    binary: airmock
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.buildDate={{.Date}}
+
+  - id: airmock-windows
+    main: ./cmd/airmock
+    binary: airmock
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.buildDate={{.Date}}
+
+  - id: airmock-windows-gui
+    main: ./cmd/airmock
+    binary: airmockw
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -H=windowsgui
+
+archives:
+  - id: unix
+    ids: [airmock-unix]
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    builds_info:
+      group: root
+      owner: root
+
+  - id: windows
+    ids: [airmock-windows, airmock-windows-gui]
+    formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: "checksums.txt"
+
+nfpms:
+  - id: linux-packages
+    ids: [airmock-unix]
+    package_name: airmock
+    vendor: AirMock
+    homepage: https://github.com/addictedabhi/AirMock
+    maintainer: AirMock <noreply@example.com>
+    description: >-
+      A lightweight, self-contained, cross-protocol API mocking tool.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - src: build/linux/airmock.service
+        dst: /usr/lib/systemd/system/airmock.service
+      - src: build/linux/airmock-app.sh
+        dst: /usr/bin/airmock-app
+        file_info:
+          mode: 0755
+      - src: build/linux/airmock.desktop
+        dst: /usr/share/applications/airmock.desktop
+      - src: ui/public/favicon.svg
+        dst: /usr/share/pixmaps/airmock.svg
+    scripts:
+      postinstall: build/linux/postinstall.sh
+      preremove: build/linux/preremove.sh
+      postremove: build/linux/postremove.sh
+
+release:
+  draft: false
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^test:"
+      - "^ci:"

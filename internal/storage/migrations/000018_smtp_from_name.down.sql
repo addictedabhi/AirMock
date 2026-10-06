@@ -1,0 +1,3 @@
+-- Additive-only in practice (see 000004_async.down.sql/000017_smtp.down.sql
+-- for the same reasoning) — no-op rather than depending on SQLite 3.35+'s
+-- ALTER TABLE DROP COLUMN.

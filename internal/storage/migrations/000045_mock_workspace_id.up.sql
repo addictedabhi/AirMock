@@ -1,0 +1,1 @@
+ALTER TABLE mocks ADD COLUMN workspace_id TEXT NOT NULL DEFAULT '';

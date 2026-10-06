@@ -1,0 +1,1 @@
+ALTER TABLE mocks ADD COLUMN smpp_json TEXT;

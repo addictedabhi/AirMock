@@ -1,0 +1,1 @@
+-- Additive-only migrations (see 000004_async.down.sql) — no-op.

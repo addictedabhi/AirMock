@@ -1,0 +1,76 @@
+#!/bin/sh
+# macOS port of build/linux/airmock-app.sh — see that file for the full
+# rationale (why a dedicated --user-data-dir, why polling instead of
+# waiting on the launch command, why only a server THIS script started
+# gets stopped again). The differences here are purely platform
+# conventions: profile dir under ~/Library/Application Support instead of
+# ~/.local/share, and Chrome-family app paths under /Applications instead
+# of a PATH lookup.
+#
+# The airmock binary itself is expected right next to this script, inside
+# Contents/MacOS/ — build-app-bundle.sh puts it there — so the whole .app
+# is self-contained (drag it into /Applications and go, no separate
+# install step, no PATH entry needed).
+set -e
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ADMIN_URL="${AIRMOCK_ADMIN_URL:-http://localhost:8080}"
+PROFILE_DIR="${AIRMOCK_APP_PROFILE_DIR:-$HOME/Library/Application Support/AirMock/app-profile}"
+DATA_DIR="${AIRMOCK_DATA_DIR:-$HOME/Library/Application Support/AirMock/data}"
+LOG_FILE="$HOME/Library/Logs/AirMock/app.log"
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+is_up() {
+  curl -s -o /dev/null -m 1 "$ADMIN_URL/healthz"
+}
+
+SERVER_PID=""
+
+cleanup() {
+  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+    kill "$SERVER_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT INT TERM
+
+if ! is_up; then
+  mkdir -p "$DATA_DIR"
+  "$SCRIPT_DIR/airmock" serve --headless --data-dir "$DATA_DIR" >>"$LOG_FILE" 2>&1 &
+  SERVER_PID=$!
+
+  for _ in $(seq 1 20); do
+    is_up && break
+    sleep 0.5
+  done
+fi
+
+mkdir -p "$PROFILE_DIR"
+
+launched=0
+for browser in \
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  "/Applications/Chromium.app/Contents/MacOS/Chromium" \
+  "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"; do
+  if [ -x "$browser" ]; then
+    "$browser" --app="$ADMIN_URL" --user-data-dir="$PROFILE_DIR" --no-first-run --no-default-browser-check --disable-dev-tools >>"$LOG_FILE" 2>&1 &
+    launched=1
+    break
+  fi
+done
+
+if [ "$launched" = "0" ]; then
+  # No Chrome-family browser found — fall back to the system default via
+  # `open`, same reasoning as xdg-open on Linux: no chromeless-window
+  # equivalent, and no reliable way to detect a plain tab closing, so any
+  # server this started is left running rather than guessed at.
+  open "$ADMIN_URL"
+  SERVER_PID=""
+  exit 0
+fi
+
+sleep 2
+while pgrep -f "user-data-dir=$PROFILE_DIR" >/dev/null 2>&1; do
+  sleep 2
+done

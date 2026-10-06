@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+fi
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+fi
+
+if [ "$1" = "purge" ] || [ "$1" = "0" ]; then
+    userdel airmock >/dev/null 2>&1 || true
+    groupdel airmock >/dev/null 2>&1 || true
+fi

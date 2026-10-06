@@ -1,0 +1,1 @@
+ALTER TABLE mock_projects ADD COLUMN tls_json TEXT NOT NULL DEFAULT '';

@@ -1,0 +1,650 @@
+/* AirMock theme — tokens, keyframes and component patterns adapted directly
+   from nfo-mock's login.html/ui.html (see the approved plan for the source
+   file paths). Keep colors/easing/durations in lockstep with that reference
+   rather than inventing new values. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background .35s cubic-bezier(.4,0,.2,1), color .35s;
+}
+
+/* No rule anywhere gave keyboard users a visible focus indicator beyond
+   whatever the browser's own UA default happens to be — often invisible
+   against a dark sidebar/card background. */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Mobile browsers paint their own translucent overlay (often blue-tinted)
+   on every tap of a button/link — with no custom :active feedback of our
+   own most buttons had, that default overlay was the ONLY visual response
+   to a tap, and on something small/circular like the PIN keypad it reads
+   as a photo/text "selection" highlight rather than a button press. */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Only the Cartoon theme sets --font-display (a bold comic-title stack);
+   every other theme leaves it unset and this falls back to the body font,
+   so headings look untouched everywhere else. */
+h1, h2, h3, h4 { font-family: var(--font-display, inherit); }
+
+/* ── Themes ────────────────────────────────────────────────────────────────
+   Every theme below defines the SAME full set of tokens — a past bug had
+   --surface2 defined only for the light palette, so it silently kept its
+   light value (and made every input/select unreadable) under any dark
+   theme, since an unset custom property on a more-specific selector simply
+   falls through to whatever a less-specific rule already set rather than
+   defaulting to anything sensible. Keep every theme block's variable list
+   identical to avoid that class of bug recurring. */
+
+:root, :root[data-theme="daylight"] {
+  color-scheme: light;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --primary: #0052cc;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warn: #d97706;
+  --text: #1e293b;
+  --muted: #64748b;
+  --hover: #f8fafc;
+  --surface: #ffffff;
+  --surface2: #f1f5f9;
+  --surface-hover: #e2e8f0;
+
+  --sb: #111827;
+  --sb-border: #1f2937;
+  --sb-muted: #94a3b8;
+  --sb-hover: #1f2937;
+  --sb-active: #1d4ed8;
+  --sb-active-2: #2563eb;
+
+  --brand-grad: linear-gradient(160deg, #0f172a 0%, #1e3a5f 100%);
+  --brand-divider: linear-gradient(90deg, #00d4f0, #7c3aed);
+  --btn-grad: linear-gradient(135deg, #0052cc, #0a78d4);
+  --page-grad: linear-gradient(135deg, #e0f2fe 0%, #f1f5f9 50%, #ede9fe 100%);
+}
+
+:root[data-theme="rose"] {
+  color-scheme: light;
+  --bg: #fdf2f6;
+  --card: #ffffff;
+  --border: #f3d9e4;
+  --primary: #db2777;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warn: #d97706;
+  --text: #451a2e;
+  --muted: #9d6b82;
+  --hover: #fbe8f0;
+  --surface: #ffffff;
+  --surface2: #fce7f0;
+  --surface-hover: #f8d4e6;
+
+  --sb: #2b0f1c;
+  --sb-border: #3d1728;
+  --sb-muted: #c48ba3;
+  --sb-hover: #3d1728;
+  --sb-active: #db2777;
+  --sb-active-2: #f472b6;
+
+  --brand-grad: linear-gradient(160deg, #2b0f1c 0%, #6b1d43 100%);
+  --brand-divider: linear-gradient(90deg, #f472b6, #db2777);
+  --btn-grad: linear-gradient(135deg, #db2777, #f472b6);
+  --page-grad: linear-gradient(135deg, #fdf2f6 0%, #fce7f0 50%, #fdf4ff 100%);
+}
+
+/* Black-and-white comic-panel look. This is the one theme that deliberately
+   diverges from "recolor the same shapes" — it also sets the optional
+   shape tokens below (--radius/--shadow-card/--border-width/--font-display)
+   that every other theme leaves unset and gets sane fallbacks for via the
+   var(...,fallback) defaults in the shared .card/.btn rules further down.
+   success/error/warn keep a sliver of desaturated color rather than going
+   pure gray — status meaning (pass/fail/warn) needs to survive at a glance,
+   and even black-and-white comics reserve a spot color for exactly that. */
+:root[data-theme="cartoon"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --card: #ffffff;
+  --border: #000000;
+  --primary: #000000;
+  --success: #1a7a3c;
+  --error: #c81e1e;
+  --warn: #b8860b;
+  --text: #000000;
+  --muted: #555555;
+  --hover: #f2f2f2;
+  --surface: #ffffff;
+  --surface2: #ececec;
+  --surface-hover: #e0e0e0;
+
+  --sb: #000000;
+  --sb-border: #000000;
+  --sb-muted: #9a9a9a;
+  --sb-hover: #1f1f1f;
+  --sb-active: #000000;
+  --sb-active-2: #3a3a3a;
+
+  --brand-grad: linear-gradient(160deg, #000000 0%, #2b2b2b 100%);
+  --brand-divider: linear-gradient(90deg, #000000, #808080);
+  --btn-grad: linear-gradient(135deg, #000000, #2b2b2b);
+  --page-grad: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+
+  --radius: 6px;
+  --radius-btn: 6px;
+  --border-width: 3px;
+  --shadow-card: 5px 5px 0 #000;
+  --shadow-card-hover: 7px 7px 0 #000;
+  --shadow-btn-primary: 4px 4px 0 #000;
+  --shadow-btn-primary-hover: 6px 6px 0 #000;
+  --font-display: 'Arial Black', 'Segoe UI Black', Impact, sans-serif;
+}
+
+:root[data-theme="meadow"] {
+  color-scheme: light;
+  --bg: #f0f7f2;
+  --card: #ffffff;
+  --border: #dce8df;
+  --primary: #059669;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warn: #d97706;
+  --text: #172e21;
+  --muted: #5f7a68;
+  --hover: #eaf5ee;
+  --surface: #ffffff;
+  --surface2: #eef6f1;
+  --surface-hover: #dcefe3;
+
+  --sb: #0f2419;
+  --sb-border: #1a3626;
+  --sb-muted: #7fa88f;
+  --sb-hover: #1a3626;
+  --sb-active: #059669;
+  --sb-active-2: #10b981;
+
+  --brand-grad: linear-gradient(160deg, #0a2318 0%, #145a3a 100%);
+  --brand-divider: linear-gradient(90deg, #10b981, #34d399);
+  --btn-grad: linear-gradient(135deg, #059669, #10b981);
+  --page-grad: linear-gradient(135deg, #ecfdf5 0%, #f0f7f2 100%);
+}
+
+:root[data-theme="midnight"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --card: #111111;
+  --border: #1e1e1e;
+  --primary: #5b9eff;
+  --success: #2ecc8a;
+  --error: #ff5050;
+  --warn: #f5a623;
+  --text: #f0f0f0;
+  --muted: #9d9d9d;
+  --hover: #141414;
+  --surface: #1a1a1a;
+  --surface2: #161616;
+  --surface-hover: #1f1f1f;
+
+  --sb: #000000;
+  --sb-border: #181818;
+  --sb-muted: #6a6a6a;
+  --sb-hover: #141414;
+  --sb-active: #1f3a63;
+  --sb-active-2: #5b9eff;
+
+  --brand-grad: linear-gradient(160deg, #0f172a 0%, #1e3a5f 100%);
+  --brand-divider: linear-gradient(90deg, #00d4f0, #7c3aed);
+  --btn-grad: linear-gradient(135deg, #2563eb, #5b9eff);
+  --page-grad: linear-gradient(135deg, #0f172a 0%, #000000 100%);
+}
+
+:root[data-theme="ocean"] {
+  color-scheme: dark;
+  --bg: #05141a;
+  --card: #0a1f28;
+  --border: #123540;
+  --primary: #22d3ee;
+  --success: #2ecc8a;
+  --error: #ff5f5f;
+  --warn: #f5b942;
+  --text: #e6f7fa;
+  --muted: #85adb5;
+  --hover: #0d2530;
+  --surface: #0e2a34;
+  --surface2: #0b2029;
+  --surface-hover: #123a46;
+
+  --sb: #041014;
+  --sb-border: #0f2a33;
+  --sb-muted: #5c8f99;
+  --sb-hover: #0d2530;
+  --sb-active: #0e7490;
+  --sb-active-2: #22d3ee;
+
+  --brand-grad: linear-gradient(160deg, #04222b 0%, #0e4f5f 100%);
+  --brand-divider: linear-gradient(90deg, #22d3ee, #0ea5e9);
+  --btn-grad: linear-gradient(135deg, #0891b2, #22d3ee);
+  --page-grad: linear-gradient(135deg, #04222b 0%, #05141a 100%);
+}
+
+:root[data-theme="sunset"] {
+  color-scheme: dark;
+  --bg: #180e08;
+  --card: #241407;
+  --border: #3a220f;
+  --primary: #f97316;
+  --success: #4ade80;
+  --error: #f87171;
+  --warn: #fbbf24;
+  --text: #fdf1e6;
+  --muted: #c39d7c;
+  --hover: #2b1a0c;
+  --surface: #2a1810;
+  --surface2: #221208;
+  --surface-hover: #35200f;
+
+  --sb: #120a05;
+  --sb-border: #2e1a0c;
+  --sb-muted: #9a7654;
+  --sb-hover: #2b1a0c;
+  --sb-active: #c2410c;
+  --sb-active-2: #f97316;
+
+  --brand-grad: linear-gradient(160deg, #2b1305 0%, #6b2e0a 100%);
+  --brand-divider: linear-gradient(90deg, #f97316, #facc15);
+  --btn-grad: linear-gradient(135deg, #ea580c, #f97316);
+  --page-grad: linear-gradient(135deg, #2b1305 0%, #180e08 100%);
+}
+
+:root[data-theme="violet"] {
+  color-scheme: dark;
+  --bg: #0f0a1a;
+  --card: #180f28;
+  --border: #2a1d40;
+  --primary: #a78bfa;
+  --success: #34d399;
+  --error: #f87171;
+  --warn: #fbbf24;
+  --text: #f1ecfb;
+  --muted: #8b7ea8;
+  --hover: #1c1330;
+  --surface: #1a1128;
+  --surface2: #150d22;
+  --surface-hover: #251a3a;
+
+  --sb: #0a0614;
+  --sb-border: #221a35;
+  --sb-muted: #7a6d95;
+  --sb-hover: #1c1330;
+  --sb-active: #6d28d9;
+  --sb-active-2: #a78bfa;
+
+  --brand-grad: linear-gradient(160deg, #1e1235 0%, #4c2889 100%);
+  --brand-divider: linear-gradient(90deg, #a78bfa, #ec4899);
+  --btn-grad: linear-gradient(135deg, #7c3aed, #a78bfa);
+  --page-grad: linear-gradient(135deg, #1e1235 0%, #0f0a1a 100%);
+}
+
+:root[data-theme="cocoa"] {
+  color-scheme: dark;
+  --bg: #1b120c;
+  --card: #241811;
+  --border: #3a2a1d;
+  --primary: #d2a066;
+  --success: #4ade80;
+  --error: #f87171;
+  --warn: #fbbf24;
+  --text: #f3e9df;
+  --muted: #b09880;
+  --hover: #2c1f15;
+  --surface: #2a1d13;
+  --surface2: #22160f;
+  --surface-hover: #35261a;
+
+  --sb: #120c08;
+  --sb-border: #2c1f15;
+  --sb-muted: #8a7461;
+  --sb-hover: #2c1f15;
+  --sb-active: #7c4a1e;
+  --sb-active-2: #d2a066;
+
+  --brand-grad: linear-gradient(160deg, #201409 0%, #5a3617 100%);
+  --brand-divider: linear-gradient(90deg, #d2a066, #f4c98a);
+  --btn-grad: linear-gradient(135deg, #92601f, #d2a066);
+  --page-grad: linear-gradient(135deg, #201409 0%, #1b120c 100%);
+}
+
+/* ── Accents ───────────────────────────────────────────────────────────────
+   A sub-option layered on top of whichever theme above is active: picking
+   one recolors only the interactive/accent tokens (--primary, the primary
+   button gradient, the active nav item, the brand divider), leaving the
+   theme's own background/surface/border/text/success/error/warn tokens
+   alone. Selected via [data-accent] on <html> (theme.js's setAccent) —
+   absent entirely when the user hasn't chosen one, which is why every rule
+   here also requires a real accent id: an unmatched selector correctly
+   falls through to the theme block above, leaving its own default primary
+   untouched.
+
+   Each theme's accents are shades WITHIN its own color family (see
+   theme.js's comment on `accents`) rather than one shared hue palette
+   reused everywhere, so every rule below is scoped to a SPECIFIC
+   [data-theme] rather than a light/dark [data-theme-mode] split — an
+   accent id is only ever defined (and only ever applied) under the one
+   theme that offers it, so there's no cross-theme ambiguity to resolve.
+   Light-mode themes pair a deep tone (--primary, doubling as --sb-active)
+   with a lighter companion (--sb-active-2); dark-mode themes invert that —
+   a bright tone (--primary, doubling as --sb-active-2) paired with a
+   darker, more muted companion (--sb-active) — matching the same pattern
+   each theme's own native palette above already uses. */
+
+/* Daylight — shades of blue */
+:root[data-theme="daylight"][data-accent="azure"] { --primary:#0284c7; --btn-grad:linear-gradient(135deg,#0284c7,#38bdf8); --brand-divider:linear-gradient(90deg,#38bdf8,#0284c7); --sb-active:#0284c7; --sb-active-2:#38bdf8; }
+:root[data-theme="daylight"][data-accent="indigo"] { --primary:#4f46e5; --btn-grad:linear-gradient(135deg,#4f46e5,#818cf8); --brand-divider:linear-gradient(90deg,#818cf8,#4f46e5); --sb-active:#4f46e5; --sb-active-2:#818cf8; }
+:root[data-theme="daylight"][data-accent="sky"] { --primary:#0ea5e9; --btn-grad:linear-gradient(135deg,#0ea5e9,#7dd3fc); --brand-divider:linear-gradient(90deg,#7dd3fc,#0ea5e9); --sb-active:#0ea5e9; --sb-active-2:#7dd3fc; }
+:root[data-theme="daylight"][data-accent="navy"] { --primary:#1e3a8a; --btn-grad:linear-gradient(135deg,#1e3a8a,#3b82f6); --brand-divider:linear-gradient(90deg,#3b82f6,#1e3a8a); --sb-active:#1e3a8a; --sb-active-2:#3b82f6; }
+
+/* Meadow — shades of green */
+:root[data-theme="meadow"][data-accent="sage"] { --primary:#65a30d; --btn-grad:linear-gradient(135deg,#65a30d,#a3e635); --brand-divider:linear-gradient(90deg,#a3e635,#65a30d); --sb-active:#65a30d; --sb-active-2:#a3e635; }
+:root[data-theme="meadow"][data-accent="forest"] { --primary:#15803d; --btn-grad:linear-gradient(135deg,#15803d,#4ade80); --brand-divider:linear-gradient(90deg,#4ade80,#15803d); --sb-active:#15803d; --sb-active-2:#4ade80; }
+:root[data-theme="meadow"][data-accent="mint"] { --primary:#10b981; --btn-grad:linear-gradient(135deg,#10b981,#6ee7b7); --brand-divider:linear-gradient(90deg,#6ee7b7,#10b981); --sb-active:#10b981; --sb-active-2:#6ee7b7; }
+:root[data-theme="meadow"][data-accent="jade"] { --primary:#0d9488; --btn-grad:linear-gradient(135deg,#0d9488,#2dd4bf); --brand-divider:linear-gradient(90deg,#2dd4bf,#0d9488); --sb-active:#0d9488; --sb-active-2:#2dd4bf; }
+
+/* Rose — shades of pink */
+:root[data-theme="rose"][data-accent="fuchsia"] { --primary:#c026d3; --btn-grad:linear-gradient(135deg,#c026d3,#e879f9); --brand-divider:linear-gradient(90deg,#e879f9,#c026d3); --sb-active:#c026d3; --sb-active-2:#e879f9; }
+:root[data-theme="rose"][data-accent="blush"] { --primary:#f43f5e; --btn-grad:linear-gradient(135deg,#f43f5e,#fecdd3); --brand-divider:linear-gradient(90deg,#fecdd3,#f43f5e); --sb-active:#f43f5e; --sb-active-2:#fda4af; }
+:root[data-theme="rose"][data-accent="magenta"] { --primary:#a21caf; --btn-grad:linear-gradient(135deg,#a21caf,#d946ef); --brand-divider:linear-gradient(90deg,#d946ef,#a21caf); --sb-active:#a21caf; --sb-active-2:#d946ef; }
+:root[data-theme="rose"][data-accent="coral"] { --primary:#e11d48; --btn-grad:linear-gradient(135deg,#e11d48,#fda4af); --brand-divider:linear-gradient(90deg,#fda4af,#e11d48); --sb-active:#e11d48; --sb-active-2:#fda4af; }
+
+/* Cartoon — different comic SPOT-color "kinds", not shades of one hue, and
+   deliberately FLAT (a solid color, not a gradient) to match its hard-
+   bordered, flat-ink panel look — a soft two-tone gradient here would
+   clash with the one visual language this theme intentionally breaks
+   from every other theme to keep (see its own block above). --sb-active
+   uses a darker companion purely for the same subtle two-shade depth its
+   own default black/dark-gray sb-active/-2 already has, not a hue blend. */
+:root[data-theme="cartoon"][data-accent="pop-red"] { --primary:#c81e1e; --btn-grad:#c81e1e; --brand-divider:#c81e1e; --sb-active:#8f1414; --sb-active-2:#c81e1e; }
+:root[data-theme="cartoon"][data-accent="hero-blue"] { --primary:#1d4ed8; --btn-grad:#1d4ed8; --brand-divider:#1d4ed8; --sb-active:#1e3a8a; --sb-active-2:#1d4ed8; }
+:root[data-theme="cartoon"][data-accent="villain-purple"] { --primary:#7c3aed; --btn-grad:#7c3aed; --brand-divider:#7c3aed; --sb-active:#5b21b6; --sb-active-2:#7c3aed; }
+:root[data-theme="cartoon"][data-accent="retro-gold"] { --primary:#b8860b; --btn-grad:#b8860b; --brand-divider:#b8860b; --sb-active:#8b6508; --sb-active-2:#b8860b; }
+
+/* Midnight — shades of blue (dark-mode pairing: bright primary, darker sb-active) */
+:root[data-theme="midnight"][data-accent="cobalt"] { --primary:#2563eb; --btn-grad:linear-gradient(135deg,#1e3a8a,#2563eb); --brand-divider:linear-gradient(90deg,#1e3a8a,#2563eb); --sb-active:#1e3a8a; --sb-active-2:#2563eb; }
+:root[data-theme="midnight"][data-accent="periwinkle"] { --primary:#818cf8; --btn-grad:linear-gradient(135deg,#4338ca,#818cf8); --brand-divider:linear-gradient(90deg,#4338ca,#818cf8); --sb-active:#4338ca; --sb-active-2:#818cf8; }
+:root[data-theme="midnight"][data-accent="steel"] { --primary:#60a5fa; --btn-grad:linear-gradient(135deg,#1d4ed8,#60a5fa); --brand-divider:linear-gradient(90deg,#1d4ed8,#60a5fa); --sb-active:#1d4ed8; --sb-active-2:#60a5fa; }
+:root[data-theme="midnight"][data-accent="cyan-blue"] { --primary:#38bdf8; --btn-grad:linear-gradient(135deg,#0369a1,#38bdf8); --brand-divider:linear-gradient(90deg,#0369a1,#38bdf8); --sb-active:#0369a1; --sb-active-2:#38bdf8; }
+
+/* Ocean — shades of teal/cyan */
+:root[data-theme="ocean"][data-accent="turquoise"] { --primary:#2dd4bf; --btn-grad:linear-gradient(135deg,#0f766e,#2dd4bf); --brand-divider:linear-gradient(90deg,#0f766e,#2dd4bf); --sb-active:#0f766e; --sb-active-2:#2dd4bf; }
+:root[data-theme="ocean"][data-accent="aqua"] { --primary:#06b6d4; --btn-grad:linear-gradient(135deg,#155e75,#06b6d4); --brand-divider:linear-gradient(90deg,#155e75,#06b6d4); --sb-active:#155e75; --sb-active-2:#06b6d4; }
+:root[data-theme="ocean"][data-accent="seafoam"] { --primary:#5eead4; --btn-grad:linear-gradient(135deg,#0f766e,#5eead4); --brand-divider:linear-gradient(90deg,#0f766e,#5eead4); --sb-active:#0f766e; --sb-active-2:#5eead4; }
+:root[data-theme="ocean"][data-accent="deepsea"] { --primary:#0891b2; --btn-grad:linear-gradient(135deg,#164e63,#0891b2); --brand-divider:linear-gradient(90deg,#164e63,#0891b2); --sb-active:#164e63; --sb-active-2:#0891b2; }
+
+/* Sunset — shades of orange/warm */
+:root[data-theme="sunset"][data-accent="amber"] { --primary:#f59e0b; --btn-grad:linear-gradient(135deg,#b45309,#f59e0b); --brand-divider:linear-gradient(90deg,#b45309,#f59e0b); --sb-active:#b45309; --sb-active-2:#f59e0b; }
+:root[data-theme="sunset"][data-accent="coral-sunset"] { --primary:#fb7185; --btn-grad:linear-gradient(135deg,#9f1239,#fb7185); --brand-divider:linear-gradient(90deg,#9f1239,#fb7185); --sb-active:#9f1239; --sb-active-2:#fb7185; }
+:root[data-theme="sunset"][data-accent="crimson"] { --primary:#ef4444; --btn-grad:linear-gradient(135deg,#991b1b,#ef4444); --brand-divider:linear-gradient(90deg,#991b1b,#ef4444); --sb-active:#991b1b; --sb-active-2:#ef4444; }
+:root[data-theme="sunset"][data-accent="peach"] { --primary:#fdba74; --btn-grad:linear-gradient(135deg,#c2410c,#fdba74); --brand-divider:linear-gradient(90deg,#c2410c,#fdba74); --sb-active:#c2410c; --sb-active-2:#fdba74; }
+
+/* Violet — shades of purple */
+:root[data-theme="violet"][data-accent="lavender"] { --primary:#c4b5fd; --btn-grad:linear-gradient(135deg,#6d28d9,#c4b5fd); --brand-divider:linear-gradient(90deg,#6d28d9,#c4b5fd); --sb-active:#6d28d9; --sb-active-2:#c4b5fd; }
+:root[data-theme="violet"][data-accent="plum"] { --primary:#c026d3; --btn-grad:linear-gradient(135deg,#701a75,#c026d3); --brand-divider:linear-gradient(90deg,#701a75,#c026d3); --sb-active:#701a75; --sb-active-2:#c026d3; }
+:root[data-theme="violet"][data-accent="indigo-violet"] { --primary:#818cf8; --btn-grad:linear-gradient(135deg,#3730a3,#818cf8); --brand-divider:linear-gradient(90deg,#3730a3,#818cf8); --sb-active:#3730a3; --sb-active-2:#818cf8; }
+:root[data-theme="violet"][data-accent="orchid"] { --primary:#d946ef; --btn-grad:linear-gradient(135deg,#86198f,#d946ef); --brand-divider:linear-gradient(90deg,#86198f,#d946ef); --sb-active:#86198f; --sb-active-2:#d946ef; }
+
+/* Cocoa — shades of brown/warm neutral */
+:root[data-theme="cocoa"][data-accent="bronze"] { --primary:#b08d57; --btn-grad:linear-gradient(135deg,#6b4a23,#b08d57); --brand-divider:linear-gradient(90deg,#6b4a23,#b08d57); --sb-active:#6b4a23; --sb-active-2:#b08d57; }
+:root[data-theme="cocoa"][data-accent="copper"] { --primary:#c2703d; --btn-grad:linear-gradient(135deg,#7c3f1d,#c2703d); --brand-divider:linear-gradient(90deg,#7c3f1d,#c2703d); --sb-active:#7c3f1d; --sb-active-2:#c2703d; }
+:root[data-theme="cocoa"][data-accent="mocha"] { --primary:#b58a5e; --btn-grad:linear-gradient(135deg,#5c4326,#b58a5e); --brand-divider:linear-gradient(90deg,#5c4326,#b58a5e); --sb-active:#5c4326; --sb-active-2:#b58a5e; }
+:root[data-theme="cocoa"][data-accent="honey"] { --primary:#e6b566; --btn-grad:linear-gradient(135deg,#92650f,#e6b566); --brand-divider:linear-gradient(90deg,#92650f,#e6b566); --sb-active:#92650f; --sb-active-2:#e6b566; }
+
+/* .badge-info/.chip-stat were hardcoded to a daylight-blue tint (rgba(0,82,
+   204,...)) regardless of theme or accent, so a picked accent would recolor
+   its own text (already var(--primary)) while the pill's background/border
+   stayed the wrong hue — color-mix derives both from --primary instead, so
+   they track whatever's active without needing their own per-accent rules. */
+.badge-info, .chip-stat {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+/* ── Keyframes, ported verbatim from nfo-mock ─────────────────────────── */
+@keyframes page-in {
+  0%   { opacity: 0; transform: translateY(16px) scale(.99); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes row-in {
+  0%   { opacity: 0; transform: translateY(-10px) scale(.97); }
+  55%  { opacity: 1; transform: translateY(2px) scale(1.004); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes icon-spin {
+  0%   { transform: rotate(0) scale(1); }
+  35%  { transform: rotate(180deg) scale(.5); }
+  65%  { transform: rotate(180deg) scale(.5); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes dot-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(46,204,138,.6); }
+  60%  { box-shadow: 0 0 0 5px rgba(46,204,138,0); }
+  100% { box-shadow: 0 0 0 0 rgba(46,204,138,0); }
+}
+@keyframes loader-spin { to { transform: rotate(360deg); } }
+@keyframes swatch-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+@keyframes theme-menu-in {
+  0%   { opacity: 0; transform: translateY(6px) scale(.96); }
+  100% { opacity: 1; transform: none; }
+}
+
+.page-enter { animation: page-in .32s cubic-bezier(.22,1,.36,1) both; }
+.row-enter { animation: row-in .32s cubic-bezier(.22,1,.36,1) both; }
+.theme-spin { animation: icon-spin .52s cubic-bezier(.34,1.56,.64,1) forwards; }
+.dot-alive {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--success);
+  animation: dot-pulse 2s ease-out infinite;
+  display: inline-block;
+}
+.loader-spin {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--primary);
+  animation: loader-spin .7s linear infinite;
+  display: inline-block; vertical-align: middle;
+}
+
+/* ── Shared components ─────────────────────────────────────────────────── */
+/* Every themed surface fades together on a theme switch instead of the
+   body alone fading while cards/inputs/chips snap instantly. */
+.card, .btn, .chip, .badge, input, select, textarea, .toast {
+  transition: background-color .28s cubic-bezier(.4,0,.2,1), border-color .22s, color .22s,
+    box-shadow .22s ease, transform .18s cubic-bezier(.4,0,.2,1);
+}
+
+/* A plain <select> with no width of its own sizes itself to fit its
+   WIDEST <option> text (browsers don't shrink it to fit the container by
+   default) — nowhere in the app gives one an explicit width, so a select
+   whose options include a longer placeholder ("Select a certificate…") or
+   a long cert/bundle/project name sprawled right past its card's edge on
+   a narrow screen. max-width:100% caps it at whatever space its
+   container actually gives it; the browser then ellipsis-truncates the
+   select's own closed-state label, same as it already does for an
+   overly-long option inside a correctly-sized one — the dropdown itself,
+   opened, still shows every option's full text regardless. */
+select { max-width: 100%; box-sizing: border-box; }
+
+.card {
+  background: var(--card);
+  border: var(--border-width, 1px) solid var(--border);
+  border-radius: var(--radius, 12px);
+  padding: 20px;
+  box-shadow: var(--shadow-card, 0 1px 3px rgba(0,0,0,.06));
+}
+.card:hover { box-shadow: var(--shadow-card-hover, 0 4px 14px rgba(0,0,0,.08)); transform: translateY(-1px); }
+
+.btn {
+  padding: 8px 16px;
+  min-height: 36px;
+  border-radius: var(--radius-btn, 8px);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .22s cubic-bezier(.4,0,.2,1);
+}
+.btn.small { padding: 6px 12px; min-height: 30px; font-size: 12px; }
+.btn-primary {
+  background: var(--btn-grad);
+  color: #fff;
+  box-shadow: var(--shadow-btn-primary, 0 4px 14px rgba(0,82,204,.35));
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-btn-primary-hover, 0 6px 20px rgba(0,82,204,.45)); }
+.btn-ghost {
+  background: var(--surface);
+  border: var(--border-width, 1.5px) solid var(--border);
+  color: var(--text);
+}
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+/* Compact density (see ui/src/lib/uiPrefs.js) — a lighter-touch pass than
+   a full per-component redesign: shrinks the handful of structural
+   properties (card padding, button height/padding, base font size) that
+   show up on nearly every page, rather than chasing every component's own
+   hardcoded spacing individually. */
+:root[data-density="compact"] .card { padding: 12px; }
+:root[data-density="compact"] .btn { padding: 6px 12px; min-height: 30px; }
+:root[data-density="compact"] .btn.small { padding: 4px 8px; min-height: 26px; }
+:root[data-density="compact"] body { font-size: 13px; }
+
+.chip, .badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 16px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid transparent;
+}
+.chip-run, .badge-ok { background: rgba(22,163,74,.1); color: var(--success); border-color: rgba(22,163,74,.3); }
+.chip-stop, .badge-err { background: rgba(220,38,38,.1); color: var(--error); border-color: rgba(220,38,38,.3); }
+.badge-warn { background: rgba(217,119,6,.1); color: var(--warn); border-color: rgba(217,119,6,.3); }
+/* background/border-color for these two come from the accent-aware
+   color-mix rule further up — this one only sets color, so a picked
+   accent doesn't get overridden back to a hardcoded daylight-blue tint. */
+.badge-info, .chip-stat { color: var(--primary); }
+.chip-tls { background: rgba(217,119,6,.1); color: var(--warn); border-color: rgba(217,119,6,.3); }
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,.12); z-index: 9999;
+  transform: translateY(100px); opacity: 0;
+  transition: all .3s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok { border-color: rgba(22,163,74,.5); color: var(--success); }
+.toast.err { border-color: rgba(220,38,38,.5); color: var(--error); }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Mobile / narrow-viewport floor ───────────────────────────────────────
+   Every page under lib/pages/ defines its OWN .field-row/.form-card in a
+   locally-scoped <style> block (Svelte scopes styles per-component by
+   default) rather than sharing one — this rule still reaches every one of
+   them, since Svelte's scoping only adds an extra attribute selector
+   alongside the class, it doesn't stop a plain global .field-row selector
+   from ALSO matching the same elements. None of those local rules set
+   flex-wrap themselves, so this is a pure addition, not an override fight.
+
+   This is a floor, not a per-page redesign: a .field-row's children wrap
+   onto their own line instead of being squeezed/overflowing off-screen,
+   but a field with a hard fixed flex-basis (flex: 0 0 140px and similar,
+   used throughout lib/pages/ for things like a port number or method
+   selector) still renders at that same fixed width on its own line rather
+   than shrinking further — real per-page adaptation is separate,
+   follow-up work, not something a global rule can safely guess at.
+
+   .head-row / .head-actions / .projects-bar / .search-input are the same
+   story: byte-identical definitions duplicated across every lib/pages/
+   file that has them (confirmed via grep across all 16 page files before
+   adding this), none of which set flex-wrap themselves — so, as with
+   .field-row above, this reaches all of them as a pure addition. This is
+   the same "Import ... button cut off at the edge" pattern already fixed
+   locally inside Collections.svelte; fixing it here once instead of
+   duplicating that page's local override into the other ~15 files.
+   .head-actions needs flex: 1 1 100% (not just wrap) because it's itself
+   a flex ITEM of .head-row with its own flex-shrink: 0 — without forcing
+   it onto its own full-width line first, its children have no room to
+   wrap into. */
+@media (max-width: 768px) {
+  .field-row { flex-wrap: wrap; }
+  .head-row { flex-wrap: wrap; }
+  .head-actions { flex-wrap: wrap; flex: 1 1 100%; }
+  .projects-bar { flex-wrap: wrap; }
+  .search-input { max-width: none; flex-basis: 100%; }
+}
+
+/* ── Mock-list rows (.mock-row) ───────────────────────────────────────────
+   Shared by all 11 mock-listing pages (Mocks/TCP/SMTP/WS/MQTT/FTP/Kafka/
+   SMPP/Diameter/JMS Mocks + Scheduled Events) — .mock-row/.mock-card/
+   .expand-arrow are byte-identical across every one of them, and .name
+   (the mock's identifier text) is byte-identical across the 9 that define
+   it locally. None of them ever set flex-wrap, so on a narrow screen the
+   row's own contents (checkbox, arrow, badges/chips, enabled toggle,
+   name/path text, and finally the Edit/Duplicate/Delete row-actions) just
+   keep laying out on one unbroken line — and since .mock-card clips
+   overflow (needed on desktop, where the row legitimately never
+   overflows), everything past the visible edge wasn't just off-screen, it
+   was invisible with no scrollbar to reach it: the row-actions buttons
+   were being rendered several hundred px past the right edge of the
+   viewport with literally no way to reach them.
+
+   All selectors below are scoped under .mock-row specifically (rather
+   than bare .name/.row-actions) since those two class names are also used
+   for unrelated things elsewhere (e.g. Collections.svelte's own
+   .row-actions on its item rows) that must NOT pick up this wrap
+   treatment. order:-1 + flex-basis:100% is the same "own full-width line"
+   trick already used for Dashboard's .activity-path and Collections'
+   .mobile-back-btn — the name/path goes on its own line up top, whatever
+   badges/chips/toggle fit continue on the next, and row-actions
+   (order:1) always lands on a final line of its own instead of being
+   silently clipped away. */
+@media (max-width: 640px) {
+  .mock-row { flex-wrap: wrap; row-gap: 8px; }
+  .mock-row .name, .mock-row .path {
+    order: -1; flex: 1 1 100%;
+    white-space: normal; overflow-wrap: anywhere; text-overflow: clip; overflow: visible;
+  }
+  .mock-row .row-actions { order: 1; flex: 1 1 100%; margin-left: 0; justify-content: flex-end; }
+}
+
+/* ── Expand/collapse arrow as a real button ───────────────────────────────
+   Rows used to be role="button" containers holding other buttons (checkbox,
+   Edit, Delete, ...), which assistive tech announces as buttons inside
+   buttons. The row itself is now a plain element and this arrow is the
+   keyboard-reachable toggle. Reset the native button look so it still reads
+   as the ▸ glyph the pages style themselves. */
+button.expand-arrow {
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+button.expand-arrow:focus-visible {
+  outline: 2px solid var(--primary, currentColor);
+  outline-offset: 1px;
+}

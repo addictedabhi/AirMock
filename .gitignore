@@ -1,0 +1,28 @@
+/bin/
+# a bare `go build ./cmd/airmock` (or `go build .`) run from the repo root
+# — rather than the normal build scripts, which all output under /bin/ —
+# drops the binary here instead; ignore it too so it can't get committed.
+/airmock
+/airmock.exe
+*.db
+*.db-shm
+*.db-wal
+.airmock/
+node_modules/
+.DS_Store
+/dist/
+# The raw brand-asset source (1844x1653, ~1.1MB) — the app uses the
+# cropped/resized copy at ui/src/assets/company-logo.png instead.
+/ui/company-logo.png
+# build-installer.sh copies these in from dist/ and makensis writes the
+# installer alongside them — none of it belongs in source control.
+/build/windows/airmock.exe
+/build/windows/airmockw.exe
+/build/windows/AirMockSetup-*.exe
+# build-app-bundle.sh writes its output zip alongside AirMock.app.
+/build/macos/AirMock-*.zip
+/.airmock-dev/
+# local tooling state (worktrees, session files); not source
+/.claude/
+/website/downloads/
+/website/downloads-extra/

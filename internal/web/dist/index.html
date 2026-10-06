@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AirMock</title>
+    <!-- Applies the saved theme, its light/dark mode and its accent before first
+         paint, so a reload does not flash the default theme. The modes object below
+         is filled in at build time with { themeId: mode } read from
+         src/lib/theme.js (see vite.config.js), so every theme is covered. Keep
+         the legacy-value migration and attribute names in sync with theme.js's
+         initial() and applyThemeAndAccent(). -->
+    <script>
+      (function () {
+        try {
+          var modes = {"daylight":"light","meadow":"light","rose":"light","cartoon":"light","midnight":"dark","ocean":"dark","sunset":"dark","violet":"dark","cocoa":"dark"};
+          var t = localStorage.getItem('airmock-theme');
+          if (t === 'dark') t = 'midnight';
+          else if (t === 'light') t = 'daylight';
+          if (!modes[t]) return;
+          var root = document.documentElement;
+          root.dataset.theme = t;
+          root.dataset.themeMode = modes[t];
+          var accents = JSON.parse(localStorage.getItem('airmock-accents') || '{}');
+          if (accents && accents[t]) root.dataset.accent = accents[t];
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-I6LY-7vk.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BYxUNfaI.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: |
+            dist/airmock-windows_windows_amd64_v1/airmock.exe
+            dist/airmock-windows-gui_windows_amd64_v1/airmockw.exe
+          retention-days: 1
+
+      # Uploaded with the dist/... paths intact so macos-app-bundle's
+      # download-artifact step (no `path:` override) recreates the exact
+      # layout build-app-bundle.sh already expects to find a goreleaser
+      # build in — the same "download preserves the goreleaser job's
+      # relative paths" approach windows-installer uses for the .exe files.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darwin-binaries
+          path: |
+            dist/airmock-unix_darwin_amd64_v1/airmock
+            dist/airmock-unix_darwin_arm64_v8.0/airmock
+          retention-days: 1
+
+  windows-installer:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-binaries
+          path: build/windows
+
+      - name: Flatten downloaded binaries
+        run: |
+          find build/windows -name "*.exe" -exec mv {} build/windows/ \;
+          ls -la build/windows
+
+      - name: Install NSIS
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis
+
+      - name: Build installer
+        run: makensis -DVERSION=${{ needs.goreleaser.outputs.version }} build/windows/airmock.nsi
+
+      - name: Upload installer to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/windows/AirMockSetup-${{ needs.goreleaser.outputs.version }}.exe
+
+  macos-app-bundle:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # path: dist — actions/upload-artifact roots an artifact's internal
+      # layout at the least-common-ancestor of every uploaded path; both
+      # darwin-binaries entries live under dist/, so the artifact's internal
+      # paths are "airmock-unix_darwin_*/airmock" with the dist/ prefix
+      # itself stripped off. Downloading with no path override extracts
+      # straight into $GITHUB_WORKSPACE, landing the binaries at
+      # ./airmock-unix_darwin_*/airmock instead of
+      # ./dist/airmock-unix_darwin_*/airmock — exactly one level short of
+      # where build-app-bundle.sh's `find "$DIST_DIR" ...` looks, so the
+      # chmod step below would fail before the script ever ran. Explicitly
+      # re-rooting the download under dist/ recreates the layout the script
+      # actually expects.
+      - uses: actions/download-artifact@v4
+        with:
+          name: darwin-binaries
+          path: dist
+
+      - name: Build .app bundles (arm64 + amd64)
+        run: |
+          chmod +x dist/airmock-unix_darwin_amd64_v1/airmock dist/airmock-unix_darwin_arm64_v8.0/airmock
+          AIRMOCK_ARCH=arm64 sh build/macos/build-app-bundle.sh ${{ needs.goreleaser.outputs.version }}
+          AIRMOCK_ARCH=amd64 sh build/macos/build-app-bundle.sh ${{ needs.goreleaser.outputs.version }}
+
+      - name: Upload .app bundles to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/macos/AirMock-${{ needs.goreleaser.outputs.version }}-arm64.zip
+            build/macos/AirMock-${{ needs.goreleaser.outputs.version }}-amd64.zip
