@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Make the social-preview URLs absolute and add the canonical link, once you know the site's address.
 
-    python3 set-site-url.py index.html https://airmock.example.internal
-    python3 set-site-url.py /var/www/airmock-site/index.html http://10.121.78.115:8090
+    python3 set-site-url.py index.html https://addictedabhi.github.io/website_airmock
+    python3 set-site-url.py index.html https://your.custom.domain
 
 Link-preview crawlers (chat, email, social) need absolute URLs for og:image and twitter:image, and a
-canonical link must be absolute too. The address is not known when the page is built, so run this
-after publishing, on the copy that is served. It is idempotent: running it again with a new address
+canonical link must be absolute too. Run this whenever the site's address changes (for example a
+custom domain on GitHub Pages) and commit the result. It is idempotent: running it again with a new address
 replaces the old one. Without it the page still works; only previews and the canonical link are missing.
 """
 import re, sys

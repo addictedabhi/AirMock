@@ -1,40 +1,39 @@
 # AirMock website
 
-A static site: `index.html`, `favicon.svg`, `fonts/`, two screenshots, `og-image.png`, and a generated
-`downloads/` folder. Nothing is loaded from another host, so it works on an isolated network.
+A static site served by GitHub Pages: `index.html`, `favicon.svg`, `fonts/`, `shots/` and `og-image.png`.
+Everything except the download list is loaded from the site itself.
+
+Live at <https://addictedabhi.github.io/website_airmock/>.
 
 ## Publish
 
+1. In the repository settings, open **Pages** and set the source to **Deploy from a branch**, branch
+   `main`, folder `/ (root)`.
+2. Push to `main`. Pages redeploys on every push.
+
+`.nojekyll` turns off Jekyll processing, so files are served as they are in the repository.
+
+## Downloads
+
+The download table is read live from the latest release of
+[addictedabhi/AirMock](https://github.com/addictedabhi/AirMock/releases) through the GitHub API, so
+publishing a new release there updates the page with no change to this repository. Do not commit
+packages or binaries here.
+
+## Site address
+
+Link previews (`og:image`, `twitter:image`) and the canonical link need absolute URLs. They are set to
+the Pages address above. If you move the site, for example to a custom domain with a `CNAME` file, run:
+
 ```sh
-# 1. Build the packages
-goreleaser release --snapshot --clean --skip=before      # or a tagged release
-
-# 2. Generate website/downloads/ (packages, checksums.txt, manifest.json) from dist/
-website/make-downloads.sh
-
-# 3. Copy the site to the server
-rsync -av --delete website/ user@SERVER:/var/www/airmock-site/
+python3 set-site-url.py index.html https://your.domain
 ```
 
-The page reads `downloads/manifest.json` for the version, commit and package list, so republishing is
-all it takes to update them. `downloads/` is generated and git-ignored; do not commit binaries.
+It is idempotent: running it again replaces the previous address.
 
-## HTTPS (needed for the copy button's modern path, and good practice)
+## Security headers
 
-The Copy button works on plain HTTP too (it falls back to selecting the text), but HTTPS makes the
-clipboard, caching headers and `Strict-Transport-Security` behave properly. For an internal CA:
-
-```sh
-# one-off: a CA, then a certificate for the site's name
-openssl req -x509 -newkey rsa:3072 -nodes -days 3650 -subj "/CN=AirMock Internal CA" -keyout ca.key -out ca.crt
-openssl req -newkey rsa:2048 -nodes -subj "/CN=airmock.example.internal" -keyout site.key -out site.csr
-printf "subjectAltName=DNS:airmock.example.internal,IP:10.121.78.115\n" > san.ext
-openssl x509 -req -in site.csr -CA ca.crt -CAkey ca.key -CAcreateserial -days 825 -extfile san.ext -out site.crt
-sudo install -m 600 site.key /etc/ssl/airmock/site.key && sudo install -m 644 site.crt /etc/ssl/airmock/site.crt
-```
-
-Install `ca.crt` as a trusted root on the machines that browse the site. Then use `nginx.conf`
-(HTTP-to-HTTPS redirect, security headers, caching).
-
-You can also use AirMock's own certificate store (Certificates page) to generate the CA and server
-certificate and download the PEM files.
+GitHub Pages serves HTTPS but does not allow custom response headers. The Content-Security-Policy is
+set with a `<meta>` tag in `index.html`; headers that only work as real HTTP headers
+(`frame-ancestors`, `X-Frame-Options`, `Strict-Transport-Security`) cannot be set on Pages.
+Enable **Enforce HTTPS** in the Pages settings.
