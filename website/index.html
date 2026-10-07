@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-skin="daylight">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -233,17 +233,15 @@ footer .brand{font-size:1.05rem} footer .brand svg{width:26px;height:26px}
 .hero-r .chip:nth-of-type(2){top:46%;right:-18px;bottom:auto;left:auto}
 
 /* themes section */
-.themes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:34px}
 .theme{all:unset;box-sizing:border-box;cursor:pointer;display:block;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:12px;transition:transform .2s,border-color .2s}
 .theme:hover{transform:translateY(-3px);border-color:var(--blue2)}
 .theme:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
 .theme[aria-pressed="true"]{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan)}
 .theme .pv{height:84px;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;border:1px solid rgba(128,128,128,.25)}
 .theme .pv i{display:block;height:7px;border-radius:4px}
-.theme .pv .a{width:46%} .theme .pv .b{width:78%;opacity:.5} .theme .pv .c{width:34%;height:14px;margin-top:auto;border-radius:6px}
+.theme .pv .c{width:34%;height:14px;margin-top:auto;border-radius:6px}
 .theme b{display:block;margin-top:10px;font:700 .95rem var(--display)}
 .theme small{color:var(--muted);font-size:.78rem}
-.dots{display:flex;gap:5px;margin-top:8px}.dots span{width:12px;height:12px;border-radius:50%}
 .tnote{margin-top:18px;color:var(--muted);font-size:.9rem}
 
 /* skins: last in the file so they override both light and dark defaults */
@@ -259,8 +257,8 @@ footer .brand{font-size:1.05rem} footer .brand svg{width:26px;height:26px}
 :root[data-skin="cartoon"] .appwin,:root[data-skin="cartoon"] .b,:root[data-skin="cartoon"] .u,:root[data-skin="cartoon"] .stat,:root[data-skin="cartoon"] .meta,:root[data-skin="cartoon"] .theme{border-width:2px;box-shadow:4px 4px 0 var(--ink)}
 :root[data-skin="cartoon"] .btn{box-shadow:3px 3px 0 var(--ink);border:2px solid var(--ink)}
 :root[data-skin="cartoon"] .b.hl{color:#fff}
-@media (max-width:900px){.themes{grid-template-columns:repeat(2,1fr)}.appwin{transform:none}.badge-mark{right:-6px;width:60px;height:60px}}
-@media (max-width:520px){.themes{grid-template-columns:1fr 1fr}.aw-kpis{grid-template-columns:repeat(3,1fr)}.kpi b{font-size:.95rem}.hero-r .chip{display:none}}
+@media (max-width:900px){.appwin{transform:none}.badge-mark{right:-6px;width:60px;height:60px}}
+@media (max-width:520px){.aw-kpis{grid-template-columns:repeat(3,1fr)}.kpi b{font-size:.95rem}.hero-r .chip{display:none}}
 
 /* v4 */
 :root{--btn-bg:linear-gradient(120deg,var(--blue),var(--blue2))}
@@ -299,8 +297,8 @@ footer .brand{font-size:1.05rem} footer .brand svg{width:26px;height:26px}
 .navbar nav{max-width:none;padding-inline:0}
 .progress{position:fixed;left:0;top:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--grad);z-index:100;pointer-events:none}
 .links a.act:not(.btn){color:var(--ink);background:var(--bg2)}
-section#behaviour,section#themes{box-shadow:0 0 0 100vmax var(--bg2);clip-path:inset(0 -100vmax);background:var(--bg2)}
-section#behaviour .u,section#themes .theme{background:var(--surface)}
+section#behaviour{box-shadow:0 0 0 100vmax var(--bg2);clip-path:inset(0 -100vmax);background:var(--bg2)}
+section#behaviour .u{background:var(--surface)}
 .hero-r .chip:nth-of-type(2){top:30%;right:auto;left:-26px}
 .uses{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px}
 .use{border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--surface);min-width:0;position:relative;overflow:hidden}
@@ -394,7 +392,6 @@ img,svg,video{max-width:100%}
 }
 @media (max-width:380px){
   .stats{grid-template-columns:1fr}
-  .themes{grid-template-columns:1fr}
 }
 
 /* v8: motion */
@@ -920,13 +917,6 @@ airmock mocks apply -f mocks.yaml --atomic \
   </div>
 </section>
 
-<section id="themes">
-  <p class="eyebrow">Themes</p>
-  <h2 style="margin-top:14px">Nine themes. Pick one and this page changes too.</h2>
-  <p class="lede">AirMock ships four light and five dark themes, each with its own accent colours, switchable from the sidebar. Density can be comfortable or compact. Try them here.</p>
-  <div class="themes" id="themeGrid"></div>
-  <p class="tnote">Light: Daylight, Meadow, Rose, Cartoon. Dark: Midnight, Ocean, Sunset, Violet, Cocoa. Your choice is remembered in this browser.</p>
-</section>
 
 <section id="security">
   <p class="eyebrow">Security</p>
@@ -1125,25 +1115,21 @@ systemctl status airmock</pre></div>
     document.getElementById('tname').textContent=t?t[1]:'System';
     Array.prototype.forEach.call(document.querySelectorAll('[data-skin-id]'),function(b){b.setAttribute('aria-pressed',b.getAttribute('data-skin-id')===id?'true':'false')});
   }
-  function mk(cls,id){
-    var t=T.filter(function(x){return x[0]===id})[0],b=document.createElement('button');b.type='button';b.className=cls;b.setAttribute('data-skin-id',id);
-    if(cls==='theme'){
-      b.innerHTML='<div class="pv" style="background:'+t[4]+'"><i class="a" style="background:'+t[5]+'"></i><i class="b" style="background:'+t[5]+'"></i><i class="c" style="background:linear-gradient(120deg,'+t[3][0]+','+t[3][1]+','+t[3][2]+')"></i></div><b>'+t[1]+'</b><small>'+t[2]+'</small><div class="dots">'+t[3].map(function(c){return '<span style="background:'+c+'"></span>'}).join('')+'</div>';
-    }else{
-      b.className='theme';b.style.padding='8px';b.innerHTML='<div class="pv" style="height:40px;background:'+t[4]+'"><i class="c" style="width:60%;height:10px;margin-top:auto;background:linear-gradient(120deg,'+t[3][0]+','+t[3][1]+','+t[3][2]+')"></i></div><small style="display:block;margin-top:6px;font-weight:600">'+t[1]+'</small>';
-    }
+  function mk(id){
+    var t=T.filter(function(x){return x[0]===id})[0],b=document.createElement('button');b.type='button';b.setAttribute('data-skin-id',id);
+    b.className='theme';b.style.padding='8px';b.innerHTML='<div class="pv" style="height:40px;background:'+t[4]+'"><i class="c" style="width:60%;height:10px;margin-top:auto;background:linear-gradient(120deg,'+t[3][0]+','+t[3][1]+','+t[3][2]+')"></i></div><small style="display:block;margin-top:6px;font-weight:600">'+t[1]+'</small>';
     b.onclick=function(){setSkin(id);document.getElementById('tpop').classList.remove('open')};
     return b;
   }
-  var g=document.getElementById('themeGrid'),sw=document.getElementById('tsw');
-  T.forEach(function(t){g.appendChild(mk('theme',t[0]));sw.appendChild(mk('mini',t[0]))});
+  var sw=document.getElementById('tsw');
+  T.forEach(function(t){sw.appendChild(mk(t[0]))});
   var sys=document.createElement('button');sys.type='button';sys.className='themebtn';sys.style.cssText='grid-column:1/-1;justify-content:center;margin-top:4px';sys.textContent='Follow system';sys.onclick=function(){setSkin('');document.getElementById('tpop').classList.remove('open')};sw.appendChild(sys);
   var tb=document.getElementById('tbtn'),tp=document.getElementById('tpop');
   tb.onclick=function(e){e.stopPropagation();var o=tp.classList.toggle('open');tb.setAttribute('aria-expanded',o)};
   document.addEventListener('click',function(e){if(!tp.contains(e.target))tp.classList.remove('open')});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')tp.classList.remove('open')});
   var saved=null;try{saved=localStorage.getItem('airmock-site-skin')}catch(e){}
-  setSkin(saved===null?'midnight':(saved==='system'?'':saved));
+  setSkin(saved===null?'daylight':(saved==='system'?'':saved));
 
   (function(){
     var a=document.getElementById('amt'),r=document.getElementById('reg'),out=document.getElementById('pout'),st=document.getElementById('pstat'),lis=document.querySelectorAll('#rules li');
